@@ -28,7 +28,7 @@ DEFINE('DUMP_DEBUG_HTML', true); //debug info
 DEFINE('TEXT', "content-type: text/html; charset=UTF-8");
 DEFINE('XML', "content-type: application/xml; charset=UTF-8");
 DEFINE('JAVASCRIPT0', "");
-DEFINE('JAVASCRIPT1', '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/jsclient001.js" type="text/javascript"></script>');
+DEFINE('JAVASCRIPT1', '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/jquery.history.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/sitexml.jsclient001.js" type="text/javascript"></script>');
 DEFINE('JAVASCRIPT3', "");
 DEFINE('JAVASCRIPT7', "");
 DEFINE('CSS0', "");
@@ -146,7 +146,7 @@ class SiteXML {
     $this->CSS[3] = CSS3;
     $this->CSS[7] = CSS7;
     $sitename = $this->getSiteName();
-    $this->default_theme_html = '<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf8"><%META%><title>'. $sitename .'</title>'. $this->JS[$this->access_level] . $this->CSS[$this->access_level] .'<style>navi ul {list-style:none; padding: 20px} #footer, #footer a {color: #666}</style></head><body><div id="header" style="font-size: 3em">'. $sitename .'</div><div id="navi" style="float:left; width:180px"><%NAVI%></div><div id="main" style="padding:0 10px 20px 200px"><%CONTENT(main)%></div><div id="footer">This is <a href="http://www.sitexml.info">SiteXML</a> default theme<br/>SiteXML:PHP v1.0 <a href="/.site.xml">.site.xml</a></div></body></html>';
+    $this->default_theme_html = '<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf8"><%META%><%SCRIPT%><title>'. $sitename .'</title><style>navi ul {list-style:none; padding: 20px} #footer, #footer a {color: #666}</style></head><body><div id="header" style="font-size: 3em">'. $sitename .'</div><div id="navi" style="float:left; width:180px"><%NAVI%></div><div id="main" style="padding:0 10px 20px 200px"><%CONTENT(main)%></div><div id="footer">This is <a href="http://www.sitexml.info">SiteXML</a> default theme<br/>SiteXML:PHP v1.0 <a href="/.site.xml">.site.xml</a></div></body></html>';
   }
   
   /* CONFIG */
@@ -164,7 +164,7 @@ class SiteXML {
     $config['missing_content']  = 'error';
     $config['missing_content_tag']  = 'error';
     $config['missing_theme']    = 'default';
-    $config['missing_page_title']    = 'site';
+    $config['missing_page_title']    = 'page_name';
     $config['no_pages_in_sitexml']    = 'welcome';
     $config['vk_app_id'] = '2854307';
     $config['vk_secret'] = 'XpSJ4YkLJ4iwffwmFT41';
@@ -215,8 +215,9 @@ class SiteXML {
     $R = array();
     $page = $this->getPageNode($pid);
     $title = $this->getPageTitle($page);
-    $address = "?id=". $attr['id'];
-    $pid = $attr['id'];
+    $attr = $page->attributes();
+    $pid = (string) $attr['id'];
+    $address = "?id=$pid";
     //getting content
     foreach($page->children() as $child) {
       if ($child->getName() == 'content') {
@@ -381,7 +382,7 @@ class SiteXML {
       foreach($macrocommands as $mc) {
         $search[] = "<%$mc($cname)%>";
         $c = json_decode($this->getContent($pid, $cname), true);
-        $replace[] = '<div class="sx-ajaxable" contenteditable="false" cid="'. $c['id'] .'" cname="'. $cname .'">'. $c['content'] .'</div>';
+        $replace[] = '<div class="sx_ajaxable" contenteditable="false" cid="'. $c['id'] .'" cname="'. $cname .'">'. $c['content'] .'</div>';
       }
     }
     $R = str_replace($search, $replace, $html);
@@ -500,7 +501,7 @@ class SiteXML {
           if ($attr['navi'] != 'no') {
             $href = '/?id='. $attr['id'];
             $theme_id = $attr['theme'];
-            $html .= '<li><a href="'. $href .'" pid="'. $attr['id'] .'" theme_id="" contenteditable="false">' . $attr['name'] . '</a>';
+            $html .= '<li><a href="'. $href .'" pid="'. $attr['id'] .'">' . $attr['name'] . '</a>';
             $html .= $this->getNaviLevel($child, $level, $cur_level+1);
           }
         }
@@ -557,11 +558,12 @@ class SiteXML {
     return $html;
   }
   
-  function replaceScript($html){
+  function replaceScript($html, $pid){
+    $js = $this->JS[$this->access_level]. "<script>var sx_page_id=$pid</script>";
     if (strstr($html, "<%SCRIPT%>")) {
-      $html = str_replace("<%SCRIPT%>", $this->JS[$this->access_level], $html);
+      $html = str_replace("<%SCRIPT%>", $js, $html);
     } else {
-      $html = str_ireplace("</head>", $this->JS[$this->access_level] ."</head>", $html);
+      $html = str_ireplace("</head>", $js ."</head>", $html);
     }
     return $html;
   }
@@ -570,11 +572,13 @@ class SiteXML {
   function getPage($id) {
     $this->log(__METHOD__ . ' ' . $id);
     $page = $this->getPageNode($id);
+    $attr = $page->attributes();
+    $pid = $attr['id'];
     $theme = $this->getPageThemeNode($page);
     $page_html = $this->getPageTheme($theme);
     $page_html = $this->replaceTPATH($page_html, $theme);
     $page_html = $this->replaceNavi($page_html);
-    $page_html = $this->replaceScript($page_html);
+    $page_html = $this->replaceScript($page_html, $pid);
     $page_html = $this->replaceTitle($page_html, $page);
     $page_html = $this->replaceContent($page_html, $page, $theme);
     $page_html = $this->replaceMeta($page_html, $page);
