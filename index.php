@@ -28,7 +28,7 @@ DEFINE('DUMP_DEBUG_HTML', true); //debug info
 DEFINE('TEXT', "content-type: text/html; charset=UTF-8");
 DEFINE('XML', "content-type: application/xml; charset=UTF-8");
 DEFINE('JAVASCRIPT0', "");
-DEFINE('JAVASCRIPT1', "");
+DEFINE('JAVASCRIPT1', '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/jsclient001.js" type="text/javascript"></script>');
 DEFINE('JAVASCRIPT3', "");
 DEFINE('JAVASCRIPT7', "");
 DEFINE('CSS0', "");
@@ -314,11 +314,11 @@ class SiteXML {
     $xpath[2] = "//theme[default='yes']";
     $xpath[3] = "//theme";
     if ($theme_id && $this->getNodeAttr($xpath[1], 'file')) {
-      $theme = $this->DOM->xpath[1];
+      $theme = $this->DOM->xpath($xpath[1]);
     } elseif ($this->getNodeAttr($xpath[2], 'file')) {
-      $theme = $this->DOM->xpath[2];
+      $theme = $this->DOM->xpath($xpath[2]);
     } elseif ($this->getNodeAttr($xpath[3], 'file')) {
-      $theme = $this->DOM->xpath[3];
+      $theme = $this->DOM->xpath($xpath[3]);
     } else {
       return false;
     }
@@ -406,7 +406,7 @@ class SiteXML {
     $search = array();
     $replace = array();
     foreach ($cnames as $cname) {
-      foreach($children as $c) {
+      foreach($themenode->children() as $c) {
         $attr = $c->attributes();
         if ($c->getName() == 'content' && $attr['name'] == $cname) {
           $content_file = CONTENT_DIR . $c;
@@ -416,13 +416,13 @@ class SiteXML {
             $content = $this->ERRORS['missing_content'];
           }
           foreach($macrocommands as $mc) {
-            $search[] = "<%$mc%>";
+            $search[] = "<%$mc($cname)%>";
             $replace[] = '<div contenteditable="false" cid="'. $attr['id'] .'" cname="'. $cname .'">'. $content .'</div>';
           }
         }
       }
     }
-    $R = str_replace($search, $replace, $html);
+    $R = str_replace($search, $replace, $R);
     return $R;
   }
   
@@ -489,10 +489,12 @@ class SiteXML {
       foreach ($node->children() as $child) {
         if ($child->getName() == 'page') {
           $attr = $child->attributes();
-          $href = '/?id='. $attr['id'];
-          $theme_id = $attr['theme'];
-          $html .= '<li><a href="'. $href .'" pid="'. $attr['id'] .'" theme_id="" contenteditable="false">' . $attr['name'] . '</a>';
-          $html .= $this->getNaviLevel($child, $level, $cur_level+1);
+          if ($attr['navi'] != 'no') {
+            $href = '/?id='. $attr['id'];
+            $theme_id = $attr['theme'];
+            $html .= '<li><a href="'. $href .'" pid="'. $attr['id'] .'" theme_id="" contenteditable="false">' . $attr['name'] . '</a>';
+            $html .= $this->getNaviLevel($child, $level, $cur_level+1);
+          }
         }
       }
       $html .= '</ul>';
@@ -530,13 +532,32 @@ class SiteXML {
     return $html;
   }
   
+  function replaceTitle($html, $page) {
+    $attr = $page->attributes();
+    $title = $attr['title'];
+    if (!$title) {
+      $title = $attr['name'];
+    }
+    $html = str_replace("<%TITLE%>", $title, $html);
+    return $html;
+  }
+  
+  function replaceTPATH($html, $theme) {
+    $attr = $theme->attributes();
+    $path = '/.themes/'. $attr['path'];
+    $html = str_replace("<%TPATH%>", $path, $html);
+    return $html;
+  }
+  
   //get the whole page output
   function getPage($id) {
     $this->log(__METHOD__ . ' ' . $id);
     $page = $this->getPageNode($id);
     $theme = $this->getPageThemeNode($page);
     $page_html = $this->getPageTheme($theme);
+    $page_html = $this->replaceTPATH($page_html, $theme);
     $page_html = $this->replaceNavi($page_html);
+    $page_html = $this->replaceTitle($page_html, $page);
     $page_html = $this->replaceContent($page_html, $page, $theme);
     $page_html = $this->replaceMeta($page_html, $page);
     return $page_html;
@@ -589,7 +610,7 @@ class SiteXML {
   # returns string
   function getNodeAttr($xpath, $attr) {
     $node = $this->DOM->xpath($xpath);
-    if ($node) {
+    if ($node[0]) {
       $r = $node[0]->attributes();
       return (string) $r[$attr];
     } else {
