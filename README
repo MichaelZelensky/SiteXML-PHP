@@ -1,0 +1,11 @@
+SiteXML:PHP
+
+Server-side site engine based on SiteXML specifications.
+
+USAGE:
+
+Simply copy index.php to your site directory. Site structure must be in full accordance with SiteXML standard:
+
+The minimum requirement is existance of .site.xml file in the site root. 
+
+More info on SiteXML at: www.sitexml.info
