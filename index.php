@@ -123,6 +123,8 @@ class SiteXML {
   var $system_log; //constantly saved log on disk
   var $access_level = 1; //{0, 1, 3, 7} binary 0: read without ajax browsing; 001: read with ajax-browsing; 011: edit content; 111: edit xml
   var $default_theme_html;
+  var $JS;
+  var $CSS;
   
   /* CONSTRUCTOR */
   
@@ -135,16 +137,16 @@ class SiteXML {
       $this->stop($this->ERRORS['opening_xml_file'] . siteXML);
     }
     //default theme html
-    $JS[0] = JAVASCRIPT0;
-    $JS[1] = JAVASCRIPT1;
-    $JS[3] = JAVASCRIPT3;
-    $JS[7] = JAVASCRIPT7;
-    $CSS[0] = CSS0;
-    $CSS[1] = CSS1;
-    $CSS[3] = CSS3;
-    $CSS[7] = CSS7;
+    $this->JS[0] = JAVASCRIPT0;
+    $this->JS[1] = JAVASCRIPT1;
+    $this->JS[3] = JAVASCRIPT3;
+    $this->JS[7] = JAVASCRIPT7;
+    $this->CSS[0] = CSS0;
+    $this->CSS[1] = CSS1;
+    $this->CSS[3] = CSS3;
+    $this->CSS[7] = CSS7;
     $sitename = $this->getSiteName();
-    $this->default_theme_html = '<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf8"><%META%><title>'. $sitename .'</title>'. $JS[$this->access_level] . $CSS[$this->access_level] .'<style>navi ul {list-style:none; padding: 20px} #footer, #footer a {color: #666}</style></head><body><div id="header" style="font-size: 3em">'. $sitename .'</div><div id="navi" style="float:left; width:180px"><%NAVI%></div><div id="main" style="padding:0 10px 20px 200px"><%CONTENT(main)%></div><div id="footer">This is <a href="http://www.sitexml.info">SiteXML</a> default theme<br/>SiteXML:PHP v1.0 <a href="/.site.xml">.site.xml</a></div></body></html>';
+    $this->default_theme_html = '<!DOCTYPE html><html><head><meta http-equiv="Content-Type" content="text/html; charset=utf8"><%META%><title>'. $sitename .'</title>'. $this->JS[$this->access_level] . $this->CSS[$this->access_level] .'<style>navi ul {list-style:none; padding: 20px} #footer, #footer a {color: #666}</style></head><body><div id="header" style="font-size: 3em">'. $sitename .'</div><div id="navi" style="float:left; width:180px"><%NAVI%></div><div id="main" style="padding:0 10px 20px 200px"><%CONTENT(main)%></div><div id="footer">This is <a href="http://www.sitexml.info">SiteXML</a> default theme<br/>SiteXML:PHP v1.0 <a href="/.site.xml">.site.xml</a></div></body></html>';
   }
   
   /* CONFIG */
@@ -549,6 +551,15 @@ class SiteXML {
     return $html;
   }
   
+  function replaceScript($html){
+    if (strstr($html, "<%SCRIPT%>")) {
+      $html = str_replace("<%SCRIPT%>", $this->JS[$this->access_level], $html);
+    } else {
+      $html = str_ireplace("</head>", $this->JS[$this->access_level] ."</head>", $html);
+    }
+    return $html;
+  }
+  
   //get the whole page output
   function getPage($id) {
     $this->log(__METHOD__ . ' ' . $id);
@@ -557,6 +568,7 @@ class SiteXML {
     $page_html = $this->getPageTheme($theme);
     $page_html = $this->replaceTPATH($page_html, $theme);
     $page_html = $this->replaceNavi($page_html);
+    $page_html = $this->replaceScript($page_html);
     $page_html = $this->replaceTitle($page_html, $page);
     $page_html = $this->replaceContent($page_html, $page, $theme);
     $page_html = $this->replaceMeta($page_html, $page);
