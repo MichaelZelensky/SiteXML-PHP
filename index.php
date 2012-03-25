@@ -190,6 +190,12 @@ class SiteXML {
       case 7: 
         return file_get_contents(siteXML);
         break;
+      case 3: 
+        return file_get_contents(siteXML);
+        break;
+      case 1: 
+        return file_get_contents(siteXML);
+        break;
       default:
         return ''; //fig vam
         break;
