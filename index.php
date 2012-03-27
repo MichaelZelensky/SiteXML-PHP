@@ -306,7 +306,7 @@ class SiteXML {
     } elseif ($this->getNodeAttr($xpath[3], "id")) {
       $page = $this->DOM->xpath($xpath[3]);
     } else {
-      $page = false;
+      return false;
     }
     return $page[0];
   }
@@ -611,7 +611,7 @@ class SiteXML {
     $pid = $attr['id'];
     $theme = $this->getPageThemeNode($page);
     $page_html = $this->getPageTheme($theme);
-    $page_html = $this->replaceTPATH($page_html, $theme);
+    if ($theme) $page_html = $this->replaceTPATH($page_html, $theme);
     $page_html = $this->replaceNavi($page_html);
     $page_html = $this->replaceScript($page_html, $pid);
     $page_html = $this->replaceTitle($page_html, $page);
