@@ -172,7 +172,7 @@ class SiteXML {
     if (file_exists(CONFIG)) {
       $farsh = file_get_contents(CONFIG);
     } else {
-      $this->stop('Error opening config file '. CONFIG);
+      return $config;
     }
     /* 
       DO SOME PARSING HERE 
