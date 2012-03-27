@@ -511,6 +511,10 @@ class SiteXML {
     return $html;
   }
   
+  function getPageHref($pid) {
+    return "/?id=$pid";
+  }
+  
   function replaceMeta($html, $page) {
     $meta = array();
     $metaH = '';
@@ -568,6 +572,37 @@ class SiteXML {
     return $html;
   }
   
+  function replacePLINK($html) {
+    $tmp = $html;
+    $search = array();
+    $replace = array();
+    while($tmp) {
+      $tmp = stristr($tmp, '<%PLINK');
+      if ($tmp) {
+        $startpos = strlen('<%PLINK');
+        $endpos = strpos($tmp, '%>');
+      } else {
+        $endpos = false;
+      }
+      if ($endpos) {
+        $inside = substr($tmp, $startpos, $endpos-$startpos);
+        $pid = (int) str_replace(array('(',')'), array('',''), $inside);
+        $xpath = "//page[@id='$pid']";
+        if ($this->getNodeAttr($xpath, "id")) {
+          $href = $this->getPageHref($pid);
+          $pname = $this->getNodeAttr($xpath, "name");
+          $s = '<%PLINK'. $inside .'%>';
+          $search[] = $s;
+          $replace[] = '<a href="'. $href .'" pid="'. $pid .'">'. $pname .'</a>';
+        }
+        $tmp = substr($tmp, strlen($s));
+      } else {
+        $tmp = false;
+      }
+    }
+    return str_replace($search, $replace, $html);
+  }
+  
   //get the whole page output
   function getPage($id) {
     $this->log(__METHOD__ . ' ' . $id);
@@ -582,6 +617,7 @@ class SiteXML {
     $page_html = $this->replaceTitle($page_html, $page);
     $page_html = $this->replaceContent($page_html, $page, $theme);
     $page_html = $this->replaceMeta($page_html, $page);
+    $page_html = $this->replacePLINK($page_html, $page);
     return $page_html;
   }
   
