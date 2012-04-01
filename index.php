@@ -31,6 +31,7 @@ DEFINE('JAVASCRIPT0', "");
 DEFINE('JAVASCRIPT1', '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/jquery.history.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/sitexml.jsclient001.js" type="text/javascript"></script>');
 DEFINE('JAVASCRIPT3', "");
 DEFINE('JAVASCRIPT7', "");
+DEFINE('JAVASCRIPT_UI', '<link rel="stylesheet" href="http://www.sitexml.info/libs/sxui/jquery-ui-1.8.18.custom.css" type="text/css" /><link rel="stylesheet" href="http://www.sitexml.info/libs/sitexml.jsclient.ui-min.css" type="text/css" /><script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/jquery.history.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/jquery-ui-1.8.18.custom.min.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/sitexml.jsclient001.js" type="text/javascript"></script><script src="http://www.sitexml.info/libs/sitexml.jsclient.ui-min.js" type="text/javascript"></script>');
 DEFINE('CSS0', "");
 DEFINE('CSS1', "");
 DEFINE('CSS3', "");
@@ -563,7 +564,12 @@ class SiteXML {
   }
   
   function replaceScript($html, $pid){
-    $js = $this->JS[$this->access_level]. "<script>var sx_page_id=$pid</script>";
+    if ($this->access_level < 3 && isset($_GET['ui'])) {
+      $js = JAVASCRIPT_UI;
+    } else {
+      $js = $this->JS[$this->access_level];
+    }
+    $js = $js ."<script>var sx_page_id=$pid</script>";
     if (strstr($html, "<%SCRIPT%>")) {
       $html = str_replace("<%SCRIPT%>", $js, $html);
     } else {
