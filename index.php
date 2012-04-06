@@ -809,7 +809,7 @@ class SiteXML {
       $_SESSION["user_email"] = $user['email'];
       $_SESSION["user_name"] = $user['name'];
       $this->system_log("User ". $user['id'] ."logged in");
-      $R = '<script>opener.unlock_loggedin('. json_encode(array($_SESSION['user_id'], $_SESSION['user_name'])) .'); window.setTimeout(close, 1000); </script>';
+      $R = '<script>opener.sxui_login('. json_encode(array($_SESSION['user_id'], $_SESSION['user_name'])) .'); window.setTimeout(close, 1000); </script>';
       return $R;
     }
   }
