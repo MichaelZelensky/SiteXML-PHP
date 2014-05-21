@@ -1,4 +1,4 @@
-<? 
+<?php
 /*
 
 SiteXML:PHP v1.0
@@ -320,8 +320,8 @@ class SiteXML {
     }
     $attr = $node->attributes();
     $theme_id = (string) $attr['theme'];
-    $xpath[1] = "//theme[id='$theme_id']";
-    $xpath[2] = "//theme[default='yes']";
+    $xpath[1] = "//theme[@id='$theme_id']";
+    $xpath[2] = "//theme[@default='yes']";
     $xpath[3] = "//theme";
     if ($theme_id && $this->getNodeAttr($xpath[1], 'file')) {
       $theme = $this->DOM->xpath($xpath[1]);
