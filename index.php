@@ -14,8 +14,8 @@ DEFINE('DEBUG', true);
 DEFINE('siteXML', '.site.xml');
 DEFINE('CONTENT_DIR', '.content/');
 DEFINE('THEMES_DIR', '.themes/');
+DEFINE('AJAX_BROWSING_SCRIPT', '<script src="js/siteXML.ajaxBrowsing.js"></script>');
 DEFINE('CONTENT_EDIT_SCRIPT', '<link rel="stylesheet" href="css/siteXML.editContent.css" type="text/css" />
-        <script src="js/jquery-2.1.3.min.js"></script>
         <script src="js/siteXML.editContent.js"></script>');
 DEFINE('DEFAULT_THEME_HTML', '<!DOCTYPE html><html>
     <head><meta http-equiv="Content-Type" content="text/html; charset=utf8">
@@ -33,21 +33,18 @@ $siteXML = new siteXML();
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch($method) {
-    case 'PUT':
-        break;
 
     case 'POST':
         if (isset($_POST['cid']) && isset($_POST['content'])) {
             $siteXML->saveContent($_POST['cid'], $_POST['content']);
         }
 
-    case 'DELETE':
-        break;
-
     case 'GET':
         if (isset($_GET['sitexml'])) {
             header("Content-type: text/xml; charset=utf-8");
             echo $siteXML->getXML();
+        } elseif (!empty($_GET['cid'])) {
+            echo $siteXML->getContent($_GET['cid']);
         } else {
             echo $siteXML->page();
         }
@@ -55,7 +52,7 @@ switch($method) {
 
     default:
         header('HTTP/1.1 405 Method Not Allowed');
-        header('Allow: GET, PUT, DELETE');
+        header('Allow: GET, POST');
         break;
 }
 
@@ -84,6 +81,7 @@ class SiteXML {
         if (!empty($_SESSION['edit'])) {
             $this->editMode = true;
         } elseif (isset($_GET['edit'])) {
+            echo 'hey!!!';
             $this->editMode = true;
             $_SESSION['edit'] = true;
         };
@@ -92,6 +90,7 @@ class SiteXML {
     function logout() {
         if (isset($_GET['logout'])) {
             session_destroy();
+            header("Cache-Control: no-cache, must-revalidate");
         };
     }
 
@@ -296,6 +295,11 @@ class SiteXML {
                 $metaHTML .= $this->singleMetaHTML($v);
             }
         }
+        $metaHTML .= '<script src="js/jquery-2.1.3.min.js"></script>';
+        $metaHTML .= AJAX_BROWSING_SCRIPT;
+        if ($this->editMode) {
+            $metaHTML .= CONTENT_EDIT_SCRIPT;
+        }
         return $metaHTML;
     }
 
@@ -307,7 +311,6 @@ class SiteXML {
             $metaHTML .= " $k=\"$v\"";
         }
         $metaHTML .= ">";
-        if ($this->editMode) $metaHTML .= CONTENT_EDIT_SCRIPT;
         return $metaHTML;
     }
 
@@ -340,9 +343,7 @@ class SiteXML {
                     $file = CONTENT_DIR . $v;
                     if (file_exists($file)) {
                         $contents = file_get_contents($file);
-                        if ($this->editMode) {
-                            $contents = '<div class="siteXML-content" cid="' . $attr['id'] . '">' . $contents . '</div>';
-                        }
+                        $contents = '<div class="siteXML-content" cid="' . $attr['id'] . '">' . $contents . '</div>';
                         $HTML = str_replace($search, $contents, $HTML);
                     } else {
                         $this->error("Error: content file " . $attr['file'] . " does not exist");
@@ -362,7 +363,7 @@ class SiteXML {
         foreach($obj as $k => $v) {
             if (strtolower($k) == 'page') {
                 $attr = $this->attributes($v);
-                $HTML .= '<li><a href="?id=' . $attr['id'] . '">' . $attr['name'] . '</a>';
+                $HTML .= '<li><a href="?id=' . $attr['id'] . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
                 $HTML .= $this->getNavi($v, $level);
                 $HTML .= '</li>';
             }
@@ -416,6 +417,18 @@ class SiteXML {
         } else {
             $this->error('Error: Content file ' . $file . ' does not exist');
         }
+    }
+
+    //
+    function getContent ($cid) {
+        $file = $this->obj->xpath("//content[@id='$cid']");
+        $file = CONTENT_DIR . $file[0];
+        if (file_exists($file)) {
+            $content = file_get_contents($file, $content);
+        } else {
+            $content = false;
+        }
+        return $content;
     }
 }
 
