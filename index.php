@@ -14,10 +14,12 @@ DEFINE('DEBUG', true);
 DEFINE('siteXML', '.site.xml');
 DEFINE('CONTENT_DIR', '.content/');
 DEFINE('THEMES_DIR', '.themes/');
+DEFINE('CONTENT_EDIT_SCRIPT', '<link rel="stylesheet" href="css/siteXML.editContent.css" type="text/css" />
+        <script src="js/jquery-2.1.3.min.js"></script>
+        <script src="js/siteXML.editContent.js"></script>');
 DEFINE('DEFAULT_THEME_HTML', '<!DOCTYPE html><html>
     <head><meta http-equiv="Content-Type" content="text/html; charset=utf8">
     <%META%>
-    <%SCRIPT%>
     <title><%TITLE%></title>
     <style>navi ul {list-style:none; padding: 20px} #footer, #footer a {color: #666}</style>
     </head><body>
@@ -28,15 +30,48 @@ DEFINE('DEFAULT_THEME_HTML', '<!DOCTYPE html><html>
 
 $siteXML = new siteXML();
 
-echo $siteXML->page();
+$method = $_SERVER['REQUEST_METHOD'];
 
+switch($method) {
+    case 'PUT':
+        break;
+
+    case 'POST':
+        if (isset($_POST['cid']) && isset($_POST['content'])) {
+            $siteXML->saveContent($_POST['cid'], $_POST['content']);
+        }
+
+    case 'DELETE':
+        break;
+
+    case 'GET':
+        if (isset($_GET['sitexml'])) {
+            header("Content-type: text/xml; charset=utf-8");
+            echo $siteXML->getXML();
+        } else {
+            echo $siteXML->page();
+        }
+        break;
+
+    default:
+        header('HTTP/1.1 405 Method Not Allowed');
+        header('Allow: GET, PUT, DELETE');
+        break;
+}
+
+
+/* Class */
 class SiteXML {
 
     var $pid;
     var $obj;
     var $pageObj;
+    var $editMode = false;
 
     function siteXML() {
+        session_start();
+        $this->setEditMode();
+        $this->logout();
         $this->obj = $this->getObj();
         $this->pid = $this->getPid();
         $this->pageObj = $this->getPageObj($this->pid);
@@ -45,9 +80,25 @@ class SiteXML {
     }
 
     //
+    function setEditMode () {
+        if (!empty($_SESSION['edit'])) {
+            $this->editMode = true;
+        } elseif (isset($_GET['edit'])) {
+            $this->editMode = true;
+            $_SESSION['edit'] = true;
+        };
+    }
+
+    function logout() {
+        if (isset($_GET['logout'])) {
+            session_destroy();
+        };
+    }
+
+    //
     function getObj () {
         if (!file_exists(siteXML)) die ('Fatal error: .site.xml does not exist');
-        $obj = simplexml_load_file(siteXML, 'SimpleXMLElement', LIBXML_DTDLOAD);
+        $obj = simplexml_load_file(siteXML, 'SimpleXMLElement');
         if (!$obj) {
             die ('Fatal error: .site.xml is not a well formed XML');
         } else {
@@ -105,23 +156,18 @@ class SiteXML {
         return $pid;
     }
 
-    //recursive
-    function getPageObj ($pid, $pageObj = false) {
-        if (!$pageObj) $pageObj = $this->obj;
-        $page = false;
-        foreach ($pageObj as $k => $v) {
-            if (strtolower($k) == 'page') {
-                $attr = $this->attributes($v);
-                if ($attr['id'] == $pid) {
-                    $page = $v;
-                    break;
-                } else {
-                    $page = $this->getPageObj($pid, $v);
-                    if ($page) break;
-                }
-            }
+    //
+    function getPageObj ($pid) {
+        if ($pid) {
+            $pageObj = $this->obj->xpath("//page[@id='$pid']");
+        } else {
+            $pageObj = $this->obj->xpath("//page");
         }
-        return $page;
+        if (isset($pageObj[0])) {
+            return $pageObj[0];
+        } else {
+            return false;
+        }
     }
 
     /*
@@ -137,44 +183,21 @@ class SiteXML {
             $themeId = false;
         }
         if ($themeId) {
-            $themeObj = $this->getThemeObj($themeId);
+            $themeObj = $this->obj->xpath("//theme[@id='$themeId']");
+            if (count($themeObj) <=0 ) {
+                $this->error("Error: theme with id $themeId does not exist");
+            }
         } else {
-            $themeObj = $this->getDefaultThemeObj();
-        }
-        return $themeObj;
-    }
-
-    //@returns {Object} theme by id or FALSE
-    function getThemeObj($themeId) {
-        $themeObj = false;
-        foreach ($this->obj as $k => $v) {
-            if (strtolower($k) == 'theme') {
-                $attr = $this->attributes($v);
-                if (strtolower($attr['id']) == $themeId) {
-                    $themeObj = $v;
-                    break;
-                }
+            $themeObj = $this->obj->xpath("//theme[contains(translate(@default, 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'yes')]");
+            if (count($themeObj) <=0 ) {
+                $themeObj = $this->obj->xpath("//theme");
             }
         }
-        return $themeObj;
-    }
-
-    //@returns {Object} default or first theme
-    function getDefaultThemeObj() {
-        $firstThemeObj = false;
-        $themeObj = false;
-        foreach ($this->obj as $k => $v) {
-            if (strtolower($k) == 'theme') {
-                if (!$firstThemeObj) $firstThemeObj = $v;
-                $attr = $this->attributes($v);
-                if (strtolower($attr['default']) == 'yes') {
-                    $themeObj = $v;
-                    break;
-                }
-            }
+        if (isset($themeObj[0])) {
+            return $themeObj[0];
+        } else {
+            return false;
         }
-        if ($themeObj) $themeObj = $firstThemeObj;
-        return $themeObj;
     }
 
     /*
@@ -236,7 +259,27 @@ class SiteXML {
         } else {
             $dir = '';
         }
-        return $dir;
+        return THEMES_DIR . $dir;
+    }
+
+    //
+    function replaceMacroCommands ($HTML) {
+        $macroCommands = array(
+            '<%THEME_PATH%>',
+            '<%SITENAME%>',
+            '<%TITLE%>',
+            '<%META%>',
+            '<%NAVI%>'
+        );
+        $replacement = array(
+            $this->getThemePath(),
+            $this->getSiteName(),
+            $this->getTitle(),
+            $this->getMetaHTML(),
+            $this->getNavi()
+        );
+        $HTML = str_replace($macroCommands, $replacement, $HTML);
+        return $HTML;
     }
 
     //
@@ -264,27 +307,8 @@ class SiteXML {
             $metaHTML .= " $k=\"$v\"";
         }
         $metaHTML .= ">";
+        if ($this->editMode) $metaHTML .= CONTENT_EDIT_SCRIPT;
         return $metaHTML;
-    }
-
-    //
-    function replaceMacroCommands ($HTML) {
-        $macroCommands = array(
-            '<%THEME_PATH%>',
-            '<%SITENAME%>',
-            '<%TITLE%>',
-            '<%META%>',
-            '<%NAVI%>'
-        );
-        $replacement = array(
-            $this->getThemePath(),
-            $this->getSiteName(),
-            $this->getTitle(),
-            $this->getMetaHTML(),
-            $this->getNavi()
-        );
-        $HTML = str_replace($macroCommands, $replacement, $HTML);
-        return $HTML;
     }
 
     //
@@ -306,15 +330,20 @@ class SiteXML {
         } else {
             return;
         }
-        foreach ($obj as $k => $v) {
+
+        if ($obj) foreach ($obj as $k => $v) {
             if (strtolower($k) == 'content') {
                 $attr = $this->attributes($v);
                 $name = $attr['name'];
                 $search = "<%CONTENT($name)%>";
                 if (strpos($HTML, $search) !== false) {
-                    $file = CONTENT_DIR . $attr['file'];
+                    $file = CONTENT_DIR . $v;
                     if (file_exists($file)) {
-                        $HTML = str_replace($search, file_get_contents($file), $HTML);
+                        $contents = file_get_contents($file);
+                        if ($this->editMode) {
+                            $contents = '<div class="siteXML-content" cid="' . $attr['id'] . '">' . $contents . '</div>';
+                        }
+                        $HTML = str_replace($search, $contents, $HTML);
                     } else {
                         $this->error("Error: content file " . $attr['file'] . " does not exist");
                     }
@@ -372,4 +401,73 @@ class SiteXML {
         }
         return $newattr;
     }
+
+    //
+    function getXML () {
+        return file_get_contents(siteXML);
+    }
+
+    //
+    function saveContent ($cid, $content) {
+        $file = $this->obj->xpath("//content[@id='$cid']");
+        $file = CONTENT_DIR . $file[0];
+        if (file_exists($file)) {
+            file_put_contents($file, $content);
+        } else {
+            $this->error('Error: Content file ' . $file . ' does not exist');
+        }
+    }
 }
+
+/*
+     * @param {Object} page object. If not given, $this->pageObj will be used
+     * @returns {Object} theme by page object
+     */
+/*function getTheme_($pageObj = false) {
+    if (!$pageObj) $pageObj = $this->pageObj;
+    $attr = $this->attributes($pageObj);
+    if (!empty($attr['theme'])) {
+        $themeId = $attr['theme'];
+    } else {
+        $themeId = false;
+    }
+    if ($themeId) {
+        $themeObj = $this->getThemeObj($themeId);
+    } else {
+        $themeObj = $this->getDefaultThemeObj();
+    }
+    return $themeObj;
+}
+
+//@returns {Object} theme by id or FALSE
+function getThemeObj_($themeId) {
+    $themeObj = false;
+    foreach ($this->obj as $k => $v) {
+        if (strtolower($k) == 'theme') {
+            $attr = $this->attributes($v);
+            if (strtolower($attr['id']) == $themeId) {
+                $themeObj = $v;
+                break;
+            }
+        }
+    }
+    return $themeObj;
+}
+
+//@returns {Object} default or first theme
+function getDefaultThemeObj_() {
+    $firstThemeObj = false;
+    $themeObj = false;
+    foreach ($this->obj as $k => $v) {
+        if (strtolower($k) == 'theme') {
+            if (!$firstThemeObj) $firstThemeObj = $v;
+            $attr = $this->attributes($v);
+            if (strtolower($attr['default']) == 'yes') {
+                $themeObj = $v;
+                break;
+            }
+        }
+    }
+    if ($themeObj) $themeObj = $firstThemeObj;
+    return $themeObj;
+}*/
