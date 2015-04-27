@@ -118,6 +118,7 @@ class SiteXML {
             } else {
                 $alias = $_SERVER['REQUEST_URI'];
             }
+            echo $alias = urldecode($alias);
             $pid = $this->getPageIdByAlias($alias);
         }
         if (!$pid) {
