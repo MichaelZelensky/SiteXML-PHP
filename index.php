@@ -14,9 +14,9 @@ DEFINE('DEBUG', true);
 DEFINE('siteXML', '.site.xml');
 DEFINE('CONTENT_DIR', '.content/');
 DEFINE('THEMES_DIR', '.themes/');
-DEFINE('AJAX_BROWSING_SCRIPT', '<script src="js/siteXML.ajaxBrowsing.js"></script>');
-DEFINE('CONTENT_EDIT_SCRIPT', '<link rel="stylesheet" href="css/siteXML.editContent.css" type="text/css" />
-        <script src="js/siteXML.editContent.js"></script>');
+DEFINE('AJAX_BROWSING_SCRIPT', '<script src="/js/siteXML.ajaxBrowsing.js"></script>');
+DEFINE('CONTENT_EDIT_SCRIPT', '<link rel="stylesheet" href="/css/siteXML.editContent.css" type="text/css" />
+        <script src="/js/siteXML.editContent.js"></script>');
 DEFINE('DEFAULT_THEME_HTML', '<!DOCTYPE html><html>
     <head><meta http-equiv="Content-Type" content="text/html; charset=utf8">
     <%META%>
@@ -38,6 +38,7 @@ switch($method) {
         if (isset($_POST['cid']) && isset($_POST['content'])) {
             $siteXML->saveContent($_POST['cid'], $_POST['content']);
         }
+        break;
 
     case 'GET':
         if (isset($_GET['sitexml'])) {
@@ -65,6 +66,7 @@ class SiteXML {
     var $pageObj;
     var $editMode = false;
 
+    //
     function siteXML() {
         session_start();
         $this->setEditMode();
@@ -78,19 +80,19 @@ class SiteXML {
 
     //
     function setEditMode () {
-        if (!empty($_SESSION['edit'])) {
-            $this->editMode = true;
-        } elseif (isset($_GET['edit'])) {
-            echo 'hey!!!';
-            $this->editMode = true;
+        if (empty($_SESSION['edit']) && isset($_GET['edit'])) {
             $_SESSION['edit'] = true;
-        };
+        }
+        if (!empty($_SESSION['edit'])) {
+            header("Cache-Control: no-cache, must-revalidate");
+            $this->editMode = true;
+        }
     }
 
+    //
     function logout() {
         if (isset($_GET['logout'])) {
             session_destroy();
-            header("Cache-Control: no-cache, must-revalidate");
         };
     }
 
@@ -107,9 +109,18 @@ class SiteXML {
 
     //
     function getPid () {
+        $pid = false;
         if (isset($_GET['id'])) {
             $pid = $_GET['id'];
-        } else {
+        } else if ($_SERVER['REQUEST_URI'] !== '/') {
+            if ($_SERVER['REQUEST_URI'][0] === '/') {
+                $alias = substr($_SERVER['REQUEST_URI'], 1);
+            } else {
+                $alias = $_SERVER['REQUEST_URI'];
+            }
+            $pid = $this->getPageIdByAlias($alias);
+        }
+        if (!$pid) {
             $defaultPid = $this->getDefaultPid();
             if (!$defaultPid) {
                 $defaultPid = $this->getFirstPagePid();
@@ -140,6 +151,24 @@ class SiteXML {
             }
         }
         return $defaultPid;
+    }
+
+    //
+    function getPageIdByAlias($alias, $parent = false) {
+        $pid = false;
+        if (!$parent) $parent = $this->obj;
+        foreach ($parent as $k => $v) {
+            if (strtolower($k) === 'page') {
+                $attr = $this->attributes($v);
+                if (!empty($attr['alias']) && $attr['alias'] == $alias) {
+                    $pid = $attr['id'];
+                } else {
+                    $pid = $this->getPageIdByAlias($alias, $v);
+                }
+                if ($pid) break;
+            }
+        }
+        return $pid;
     }
 
     //
@@ -258,7 +287,7 @@ class SiteXML {
         } else {
             $dir = '';
         }
-        return THEMES_DIR . $dir;
+        return '/' . THEMES_DIR . $dir;
     }
 
     //
@@ -295,7 +324,7 @@ class SiteXML {
                 $metaHTML .= $this->singleMetaHTML($v);
             }
         }
-        $metaHTML .= '<script src="js/jquery-2.1.3.min.js"></script>';
+        $metaHTML .= '<script src="/js/jquery-2.1.3.min.js"></script>';
         $metaHTML .= AJAX_BROWSING_SCRIPT;
         if ($this->editMode) {
             $metaHTML .= CONTENT_EDIT_SCRIPT;
@@ -331,7 +360,7 @@ class SiteXML {
         } elseif ($where == 'theme') {
             $obj = $this->themeObj;
         } else {
-            return;
+            return false;
         }
 
         if ($obj) foreach ($obj as $k => $v) {
@@ -363,7 +392,8 @@ class SiteXML {
         foreach($obj as $k => $v) {
             if (strtolower($k) == 'page') {
                 $attr = $this->attributes($v);
-                $HTML .= '<li><a href="?id=' . $attr['id'] . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
+                $href = (isset($attr['alias'])) ? '/' . $attr['alias'] : '/?id=' . $attr['id'];
+                $HTML .= '<li><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
                 $HTML .= $this->getNavi($v, $level);
                 $HTML .= '</li>';
             }
@@ -424,63 +454,10 @@ class SiteXML {
         $file = $this->obj->xpath("//content[@id='$cid']");
         $file = CONTENT_DIR . $file[0];
         if (file_exists($file)) {
-            $content = file_get_contents($file, $content);
+            $content = file_get_contents($file);
         } else {
             $content = false;
         }
         return $content;
     }
 }
-
-/*
-     * @param {Object} page object. If not given, $this->pageObj will be used
-     * @returns {Object} theme by page object
-     */
-/*function getTheme_($pageObj = false) {
-    if (!$pageObj) $pageObj = $this->pageObj;
-    $attr = $this->attributes($pageObj);
-    if (!empty($attr['theme'])) {
-        $themeId = $attr['theme'];
-    } else {
-        $themeId = false;
-    }
-    if ($themeId) {
-        $themeObj = $this->getThemeObj($themeId);
-    } else {
-        $themeObj = $this->getDefaultThemeObj();
-    }
-    return $themeObj;
-}
-
-//@returns {Object} theme by id or FALSE
-function getThemeObj_($themeId) {
-    $themeObj = false;
-    foreach ($this->obj as $k => $v) {
-        if (strtolower($k) == 'theme') {
-            $attr = $this->attributes($v);
-            if (strtolower($attr['id']) == $themeId) {
-                $themeObj = $v;
-                break;
-            }
-        }
-    }
-    return $themeObj;
-}
-
-//@returns {Object} default or first theme
-function getDefaultThemeObj_() {
-    $firstThemeObj = false;
-    $themeObj = false;
-    foreach ($this->obj as $k => $v) {
-        if (strtolower($k) == 'theme') {
-            if (!$firstThemeObj) $firstThemeObj = $v;
-            $attr = $this->attributes($v);
-            if (strtolower($attr['default']) == 'yes') {
-                $themeObj = $v;
-                break;
-            }
-        }
-    }
-    if ($themeObj) $themeObj = $firstThemeObj;
-    return $themeObj;
-}*/
