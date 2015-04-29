@@ -468,26 +468,54 @@ class SiteXML {
     }
 
     //
-    function getNavi_orig($obj = false, $level = 0) {
+    function getNavi($obj = false, $maxlevel = 0, $level = 0) {
         $level ++;
         if (!$obj) $obj = $this->obj;
         $HTML = '';
-        foreach($obj as $k => $v) {
-            if (strtolower($k) == 'page') {
-                $attr = $this->attributes($v);
-                $href = (isset($attr['alias'])) ? '/' . $attr['alias'] : '/?id=' . $attr['id'];
-                $HTML .= '<li><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
-                $HTML .= $this->getNavi($v, $level);
-                $HTML .= '</li>';
+        if ($maxlevel <> 0 && $maxlevel >= $level) {
+            foreach($obj as $k => $v) {
+                if (strtolower($k) == 'page') {
+                    $attr = $this->attributes($v);
+                    $href = (isset($attr['alias'])) ? '/' . $attr['alias'] : '/?id=' . $attr['id'];
+                    $HTML .= '<li><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
+                    $HTML .= $this->getNavi($v, $maxlevel, $level);
+                    $HTML .= '</li>';
+                }
             }
+            if ($HTML <> '') $HTML = "<ul class=\"siteXML-navi level-$level\">$HTML</ul>";
         }
-        if ($HTML <> '') $HTML = "<ul class=\"siteXML-navi level-$level\">$HTML</ul>";
+        return $HTML;
+    }
+
+    //
+    function replaceNavi($HTML) {
+        $HTML = str_replace('<%NAVI%>', $this->getNavi(), $HTML);
+        //replacing macrocommands like <%NAVI(1,2)% >
+        $pos = strpos($HTML, '<%NAVI', 0);
+        while ($pos) {
+            $pos1 = strpos($HTML, '(', $pos + 1);
+            $pos2 = strpos($HTML, ')', $pos + 1);
+                if ($pos1 && $pos2) {
+                $arg = substr($HTML, $pos1 + 1 , $pos2 - $pos1 - 1);
+                $arg = explode(',', $arg);
+            } else {
+                $arg = false;
+            }
+            if ($arg) {
+                $needle = "<%NAVI(" . $arg[0] . "," . $arg[1] . ")%>";
+                $pageObj = $this->getPageObj($arg[0]);
+                $replace = $this->getNavi($pageObj, $arg[1]);
+                $HTML = str_replace($needle, $replace, $HTML);
+            }
+            $pos = strpos($HTML, '<%NAVI', $pos + 1);
+        }
         return $HTML;
     }
 
     //
     function page () {
         $pageHTML = $this->getThemeHTML($this->themeObj);
+        $pageHTML = $this->replaceNavi($pageHTML);
         $pageHTML = $this->replacePageContent($pageHTML);
         $pageHTML = $this->replaceThemeContent($pageHTML);
         $pageHTML = $this->replaceMacroCommands($pageHTML);
