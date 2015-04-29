@@ -22,12 +22,13 @@ DEFINE('DEFAULT_THEME_HTML', '<!DOCTYPE html><html>
     <head><meta http-equiv="Content-Type" content="text/html; charset=utf8">
     <%META%>
     <title><%TITLE%></title>
-    <style>navi ul {list-style:none; padding: 20px} #footer, #footer a {color: #666}</style>
     </head><body>
     <div id="header" style="font-size: 3em"><%SITENAME%></div><div id="navi" style="float:left; width:180px"><%NAVI%></div>
     <div id="main" style="padding:0 10px 20px 200px"><%CONTENT(main)%></div>
     <div id="footer">This is <a href="http://www.sitexml.info">SiteXML</a> default theme<br/>SiteXML:PHP v1.0
     <a href="/.site.xml">.site.xml</a></div></body></html>');
+
+session_start();
 
 $siteXML = new siteXML();
 
@@ -48,8 +49,13 @@ switch($method) {
             $siteXML->logout();
         }
 
-        if (isset($_GET['edit']) && !isset($_SESSION['username'])) {
-            echo $siteXML->loginScreen();
+        if (isset($_GET['edit'])) {
+            if (!empty($_SESSION['username'])) {
+                $_SESSION['edit'] = true;
+                echo $siteXML->page();
+            } else {
+                echo $siteXML->loginScreen('edit');
+            }
         } elseif (isset($_GET['sitexml'])) {
             header("Content-type: text/xml; charset=utf-8");
             echo $siteXML->getXML();
@@ -60,6 +66,9 @@ switch($method) {
         } else {
             echo $siteXML->page();
         }
+
+        echo '<!--' . print_r($_SESSION, true) . '-->';
+
         break;
 
     default:
@@ -79,7 +88,6 @@ class SiteXML {
 
     //
     function siteXML() {
-        session_start();
         $this->setEditMode();
         $this->obj = $this->getObj();
         $this->pid = $this->getPid();
@@ -97,7 +105,7 @@ class SiteXML {
     }
 
     //
-    function loginScreen() {
+    function loginScreen($edit = '') {
         return '<!DOCTYPE html>
 <html>
 <head>
@@ -121,8 +129,9 @@ class SiteXML {
         <div>
             <input placeholder="Password" name="password" type="password">
         </div>
-        <div>
-            <input type="submit">
+        <div>'
+        . ( $edit == 'edit' ? '<input type="hidden" name="edit" value="true">' : '')
+        . '<input type="submit">
         </div>
     </form>
 </div>
@@ -139,6 +148,9 @@ class SiteXML {
             if ($user) {
                 if ($user[2] === $password) {
                     $_SESSION['username'] = $username;
+                    if (!empty($_POST['edit'])) {
+                        $_SESSION['edit'] = true;
+                    }
                     header('location: /');
                 }
             }
@@ -456,7 +468,7 @@ class SiteXML {
     }
 
     //
-    function getNavi($obj = false, $level = 0) {
+    function getNavi_orig($obj = false, $level = 0) {
         $level ++;
         if (!$obj) $obj = $this->obj;
         $HTML = '';
