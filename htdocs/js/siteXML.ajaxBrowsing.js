@@ -26,6 +26,7 @@ $(function () {
             //how to load the content for the page's content zones???
             /*******/
 
+            console.log($(this).attr('pid'));
             return true;
         });
     };

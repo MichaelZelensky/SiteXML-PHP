@@ -15,6 +15,7 @@ DEFINE('siteXML', '.site.xml');
 DEFINE('USERS_FILE', '../.users');
 DEFINE('CONTENT_DIR', '.content/');
 DEFINE('THEMES_DIR', '.themes/');
+DEFINE('MODULES_DIR', '.modules/');
 DEFINE('AJAX_BROWSING_SCRIPT', '<script src="/js/siteXML.ajaxBrowsing.js"></script>');
 DEFINE('CONTENT_EDIT_SCRIPT', '<link rel="stylesheet" href="/css/siteXML.editContent.css" type="text/css" />
         <script src="/js/siteXML.editContent.js"></script>');
@@ -452,18 +453,29 @@ class SiteXML {
                 $name = $attr['name'];
                 $search = "<%CONTENT($name)%>";
                 if (strpos($HTML, $search) !== false) {
-                    $file = CONTENT_DIR . $v;
-                    if (file_exists($file)) {
-                        $contents = file_get_contents($file);
-                        $contents = '<div class="siteXML-content" cid="' . $attr['id'] . '">' . $contents . '</div>';
-                        $HTML = str_replace($search, $contents, $HTML);
+                    if (isset($attr['type']) && $attr['type'] == 'module') {
+                        $file = MODULES_DIR . $v;
+                        if (file_exists($file)) {
+                            ob_start();
+                            include_once($file);
+                            $contents = ob_get_clean();
+                        } else {
+                            $this->error("Error: module file " . $attr['file'] . " does not exist");
+                        }
+
                     } else {
-                        $this->error("Error: content file " . $attr['file'] . " does not exist");
+                        $file = CONTENT_DIR . $v;
+                        if (file_exists($file)) {
+                            $contents = file_get_contents($file);
+                            $contents = '<div class="siteXML-content" cid="' . $attr['id'] . '">' . $contents . '</div>';
+                        } else {
+                            $this->error("Error: content file " . $attr['file'] . " does not exist");
+                        }
                     }
+                    $HTML = str_replace($search, $contents, $HTML);
                 }
             }
         }
-
         return $HTML;
     }
 
@@ -495,7 +507,7 @@ class SiteXML {
         while ($pos) {
             $pos1 = strpos($HTML, '(', $pos + 1);
             $pos2 = strpos($HTML, ')', $pos + 1);
-                if ($pos1 && $pos2) {
+            if ($pos1 && $pos2) {
                 $arg = substr($HTML, $pos1 + 1 , $pos2 - $pos1 - 1);
                 $arg = explode(',', $arg);
             } else {
@@ -554,8 +566,14 @@ class SiteXML {
         $file = $this->obj->xpath("//content[@id='$cid']");
         $file = CONTENT_DIR . $file[0];
         if (file_exists($file)) {
-            file_put_contents($file, $content);
+            if (file_put_contents($file, $content)) {
+                echo 'Content saved';
+            } else {
+                header("HTTP/1.0 500 Server Error");
+                $this->error('Error: Content not saved: ' . $file);
+            };
         } else {
+            header("HTTP/1.0 404 Not Found");
             $this->error('Error: Content file ' . $file . ' does not exist');
         }
     }
