@@ -202,7 +202,8 @@ class SiteXML {
                 $alias = $_SERVER['REQUEST_URI'];
             }
             $alias = urldecode($alias);
-            $pid = $this->getPageIdByAlias($alias);
+            $aliasNoEndingSlash = rtrim($alias, "/");
+            $pid = $this->getPageIdByAlias($aliasNoEndingSlash);
         }
         if (!$pid) {
             $defaultPid = $this->getDefaultPid();
@@ -237,14 +238,17 @@ class SiteXML {
         return $defaultPid;
     }
 
-    //
+    /*
+     * @param {String} $alias - make sure that it doesn't end with slash - '/'
+     * */
     function getPageIdByAlias($alias, $parent = false) {
         $pid = false;
         if (!$parent) $parent = $this->obj;
+        //can't use xpath because of slashes in alias
         foreach ($parent as $k => $v) {
             if (strtolower($k) === 'page') {
                 $attr = $this->attributes($v);
-                if (!empty($attr['alias']) && $attr['alias'] == $alias) {
+                if (!empty($attr['alias']) && rtrim($attr['alias']) == $alias) {
                     $pid = $attr['id'];
                 } else {
                     $pid = $this->getPageIdByAlias($alias, $v);
