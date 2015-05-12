@@ -2,6 +2,8 @@
  * SiteXML content edit script
  *
  * requires jQuery
+ *
+ * @author Michael Zelensky 2015
  */
 
 $(function() {

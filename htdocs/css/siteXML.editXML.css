@@ -1,0 +1,48 @@
+#siteXML-editXML-container {
+    position : fixed;
+    top : 0;
+    left: 0;
+    width : 400px;
+    height : 100%;
+    border-right : 1px solid #D4D4DB;
+    background : #fff;
+    padding-top: 10px;
+    cursor: default;
+    font-family: Arial, sans-serif;
+    color: #222;
+    font-size: 12px;
+}
+#siteXML-editXML-container .siteXML-properties {
+    padding: 20px;
+}
+#siteXML-editXML-container .siteXML-tree {
+    height: 50%;
+    overflow: auto;
+    border-bottom: 1px solid #D4D4DB;
+}
+#siteXML-editXML-container ul {
+    list-style: none;
+    margin: 0 0 0 20px;
+    padding: 0;
+}
+#siteXML-editXML-container li {
+    padding-left: 10px;
+}
+#siteXML-editXML-container li.collapsible {
+    padding-left: 0;
+}
+#siteXML-editXML-container li.collapsible::before {
+    content: "▾ ";
+}
+#siteXML-editXML-container li.collapsible.collapsed::before {
+    content: "▸ ";
+}
+#siteXML-editXML-container li.collapsed > ul {
+    display: none;
+}
+#siteXML-editXML-container table {
+    display: none;
+}
+#siteXML-editXML-container td {
+    padding: 4px;
+}

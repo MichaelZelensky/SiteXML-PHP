@@ -17,8 +17,12 @@ DEFINE('CONTENT_DIR', '.content/');
 DEFINE('THEMES_DIR', '.themes/');
 DEFINE('MODULES_DIR', '.modules/');
 DEFINE('AJAX_BROWSING_SCRIPT', '<script src="/js/siteXML.ajaxBrowsing.js"></script>');
-DEFINE('CONTENT_EDIT_SCRIPT', '<link rel="stylesheet" href="/css/siteXML.editContent.css" type="text/css" />
-        <script src="/js/siteXML.editContent.js"></script>');
+DEFINE('CONTENT_EDIT_SCRIPT', '
+    <link rel="stylesheet" href="http://yui.yahooapis.com/3.18.1/build/cssreset-context/cssreset-context-min.css" type="text/css" />
+    <link rel="stylesheet" href="/css/siteXML.editContent.css" type="text/css" />
+    <link rel="stylesheet" href="/css/siteXML.editXML.css" type="text/css" />
+    <script src="/js/siteXML.editContent.js"></script>
+    <script src="/js/siteXML.editXML.js"></script>');
 DEFINE('DEFAULT_THEME_HTML', '<!DOCTYPE html><html>
     <head><meta http-equiv="Content-Type" content="text/html; charset=utf8">
     <%META%>
@@ -412,11 +416,6 @@ class SiteXML {
                 $metaHTML .= $this->singleMetaHTML($v);
             }
         }
-        $metaHTML .= '<script src="/js/jquery-2.1.3.min.js"></script>';
-        $metaHTML .= AJAX_BROWSING_SCRIPT;
-        if ($this->editMode) {
-            $metaHTML .= CONTENT_EDIT_SCRIPT;
-        }
         return $metaHTML;
     }
 
@@ -529,12 +528,29 @@ class SiteXML {
     }
 
     //
+    function appendScripts($HTML) {
+        $pos = stripos($HTML, "</body>");
+        $scripts = '<script src="/js/jquery-2.1.3.min.js"></script>' .
+            AJAX_BROWSING_SCRIPT .
+            ($this->editMode ? CONTENT_EDIT_SCRIPT : '');
+        if ($pos >= 0) {
+            $HTML = substr($HTML, 0, $pos) .
+                $scripts .
+                substr($HTML, $pos);
+        } else {
+            $HTML .= $scripts;
+        }
+        return $HTML;
+    }
+    
+    //
     function page () {
         $pageHTML = $this->getThemeHTML($this->themeObj);
         $pageHTML = $this->replaceNavi($pageHTML);
         $pageHTML = $this->replacePageContent($pageHTML);
         $pageHTML = $this->replaceThemeContent($pageHTML);
         $pageHTML = $this->replaceMacroCommands($pageHTML);
+        $pageHTML = $this->appendScripts($pageHTML);
         return $pageHTML;
     }
 
