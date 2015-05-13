@@ -11,11 +11,28 @@
     font-family: Arial, sans-serif;
     color: #222;
     font-size: 12px;
+    transition: width .05s;
 }
-#siteXML-editXML-container .siteXML-properties {
+#siteXML-editXML-container.collapsed {
+    width: 0;
+}
+#siteXML-editXML-container .panel-button {
+    height: 40px;
+    width: 15px;
+    background: rgba(204, 204, 204, 0.9);
+    position: absolute;
+    top: 4px;
+    right: -15px;
+    border-radius: 0 4px 4px 0;
+}
+#siteXML-editXML-container .button {
+    color: #ccc;
+    text-decoration: none;
+}
+#siteXML-editXML-container .properties {
     padding: 20px;
 }
-#siteXML-editXML-container .siteXML-tree {
+#siteXML-editXML-container .tree {
     height: 50%;
     overflow: auto;
     border-bottom: 1px solid #D4D4DB;

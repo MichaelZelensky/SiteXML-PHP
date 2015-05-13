@@ -13,22 +13,23 @@ $(function(){
 
     //
     app.init = function () {
-        var container = $('<div id="siteXML-editXML-container" class="yui3-cssreset">' +
-            '<div class="siteXML-tree"></div>' +
-            '<div class="siteXML-properties">' +
+        var container = $('<div id="siteXML-editXML-container" class="yui3-cssreset collapsed">' +
+            '<div class="panel-button"></div>' +
+            '<div class="tree"></div>' +
+            '<div class="properties">' +
             '<table>' +
-            '<tr class="siteXML-properties-id"><td>Id</td><td><input type="text"></td></tr>' +
-            '<tr class="siteXML-properties-default"><td>Default</td><td><input type="checkbox"></td></tr>' +
-            '<tr class="siteXML-properties-startPage"><td>Start page</td><td><input type="checkbox"></td></tr>' +
-            '<tr class="siteXML-properties-show"><td>Show</td><td><input type="checkbox"></td></tr>' +
-            '<tr class="siteXML-properties-name"><td>Name</td><td><input type="text"></td></tr>' +
-            '<tr class="siteXML-properties-alias"><td>Alias</td><td><input type="text"></td></tr>' +
-            '<tr class="siteXML-properties-theme"><td>Theme</td><td><input type="text"></td></tr>' +
-            '<tr class="siteXML-properties-dir"><td>Dir</td><td><input type="text"></td></tr>' +
-            '<tr class="siteXML-properties-file"><td>File</td><td><input type="text"></td></tr>' +
-            '<tr class="siteXML-properties-type"><td>Type</td><td><input type="text"></td></tr>' +
-            '<tr class="siteXML-properties-content"><td>Content</td><td><input type="text"></td></tr>' +
-            '<tr class="siteXML-properties-nodeContent"><td>Node content</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-id"><td>Id</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-default"><td>Default</td><td><input type="checkbox"></td></tr>' +
+            '<tr class="properties-startPage"><td>Start page</td><td><input type="checkbox"></td></tr>' +
+            '<tr class="properties-show"><td>Show</td><td><input type="checkbox"></td></tr>' +
+            '<tr class="properties-name"><td>Name</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-alias"><td>Alias</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-theme"><td>Theme</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-dir"><td>Dir</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-file"><td>File</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-type"><td>Type</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-content"><td>Content</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-nodeContent"><td>Node content</td><td><input type="text"></td></tr>' +
             '</table>' +
             '</div></div>')
             .css({
@@ -42,18 +43,18 @@ $(function(){
 
     //
     app.cacheEls = function () {
-        this.els.propertiesId = this.find('.siteXML-properties-id');
-        this.els.propertiesDefault = this.find('.siteXML-properties-default');
-        this.els.propertiesStartPage = this.find('.siteXML-properties-startPage');
-        this.els.propertiesShow = this.find('.siteXML-properties-show');
-        this.els.propertiesName = this.find('.siteXML-properties-name');
-        this.els.propertiesAlias = this.find('.siteXML-properties-alias');
-        this.els.propertiesTheme = this.find('.siteXML-properties-theme');
-        this.els.propertiesDir = this.find('.siteXML-properties-dir');
-        this.els.propertiesFile = this.find('.siteXML-properties-file');
-        this.els.propertiesContent = this.find('.siteXML-properties-content');
-        this.els.propertiesType = this.find('.siteXML-properties-type');
-        this.els.propertiesNodeContent = this.find('.siteXML-properties-nodeContent');
+        this.els.propertiesId = this.find('.properties-id');
+        this.els.propertiesDefault = this.find('.properties-default');
+        this.els.propertiesStartPage = this.find('.properties-startPage');
+        this.els.propertiesShow = this.find('.properties-show');
+        this.els.propertiesName = this.find('.properties-name');
+        this.els.propertiesAlias = this.find('.properties-alias');
+        this.els.propertiesTheme = this.find('.properties-theme');
+        this.els.propertiesDir = this.find('.properties-dir');
+        this.els.propertiesFile = this.find('.properties-file');
+        this.els.propertiesContent = this.find('.properties-content');
+        this.els.propertiesType = this.find('.properties-type');
+        this.els.propertiesNodeContent = this.find('.properties-nodeContent');
     };
 
     //
@@ -73,12 +74,29 @@ $(function(){
     app.bindEvents = function () {
         var me = this;
         this.els.container.on('click', function (e) {
-            var el = $(e.target);
+            var ul, newli, newNode, id, parser,
+                el = $(e.target);
             if (el.is('li')) {
                 if (el.is('.collapsible')) {
                     el.toggleClass('collapsed');
                 }
                 me.showProperties(el);
+            } else if (el.is('.panel-button')) {
+                me.els.container.toggleClass('collapsed');
+            } else if (el.is('.button')) {
+                ul = el.closest('li').children('ul');
+                if (!ul.length) {
+                    ul = $('<ul></ul>');
+                    el.closest('li').append(ul);
+                }
+                if (el.is('.addPage')) {
+                    id = me.getMaxId('page') + 1;
+                    parser = new DOMParser();
+                    newNode = parser.parseFromString('<page id="' + id + '" />', "application/xml");
+                    newli = me.renderItem(newNode.childNodes[0]);
+                    ul.append(newli);
+                }
+                return false;
             }
         });
     };
@@ -137,7 +155,7 @@ $(function(){
         } else {
             xpath = "//" + nodeName;
         }
-        var node = this.xml.evaluate(xpath, this.xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null).singleNodeValue;
+        var node = this.xpath(xpath, true);
         return node;
     };
 
@@ -159,31 +177,20 @@ $(function(){
 
     //
     app.buildTree = function () {
-        var html = renderBranch (this.xml);
-        this.els.container.find('.siteXML-tree').append(html);
-        function renderBranch (parent) {
-            var child, name, dataAttributes, cl,
+        var me = this,
+            html = renderBranch (this.xml);
+        this.els.container.find('.tree').append(html);
+        function renderBranch (parent) { //recursive
+            var child,
                 i = 0,
                 children = parent.children,
                 n = children.length,
                 html = '';
-
             if (n > 0) {
                 html = '<ul>';
                 for (i; i < n; i++) {
                     child = children[i];
-                    if (['site', 'theme', 'page'].indexOf(child.nodeName.toLowerCase()) >= 0) {
-                        cl = 'collapsed collapsible';
-                    } else {
-                        cl = '';
-                    }
-                    dataAttributes = 'data-id="' + child.id + '"'
-                        + 'data-nodename="' + child.nodeName + '"'
-                    name = child.getAttribute('name');
-                    name = (name) ? ' name="' + name + '"' : '';
-                    html += '<li class="' + cl + '" ' + dataAttributes + '>'
-                        + child.nodeName
-                        + name
+                    html += me.renderItem(child)
                         + renderBranch(child)
                         + "</li>";
                 }
@@ -192,6 +199,41 @@ $(function(){
 
             return html;
         }
+    };
+
+    //
+    app.renderItem = function (child) {
+        var name, dataAttributes, cl, buttons, nameLC,
+            html = '',
+            pb = ' <a href="#" class="addPage button">[+p]</a>',
+            mb = ' <a href="#" class="addMeta button">[+m]</a>',
+            cb = ' <a href="#" class="addContent button">[+c]</a>',
+            tb = ' <a href="#" class="addTheme button">[+t]</a>';
+        nameLC = child.nodeName.toLowerCase();
+        if (['site', 'theme', 'page'].indexOf(nameLC) >= 0) {
+            cl = 'collapsed collapsible';
+        } else {
+            cl = '';
+        }
+        if (nameLC === 'site') {
+            buttons = pb + mb + tb;
+        } else if (nameLC === 'page') {
+            buttons = pb + mb + cb;
+        } else if (nameLC === 'theme') {
+            buttons = mb + cb;
+        } else {
+            buttons = '';
+        }
+        dataAttributes = 'data-id="' + child.id + '"'
+            + 'data-nodename="' + child.nodeName + '"'
+        name = child.getAttribute('name');
+        name = (name) ? ' name="' + name + '"' : '';
+        html += '<li class="' + cl + '" ' + dataAttributes + '>'
+            + child.nodeName
+            + name
+            + buttons;
+
+        return html;
     };
 
     //
@@ -210,6 +252,38 @@ $(function(){
     //
     app.find = function(selector) {
         return this.els.container.find(selector);
+    };
+
+    //
+    app.getMaxId = function (what) {
+        var xpath, nodes, node,
+            id = 0;
+        if (what === 'page') {
+            xpath = '//page';
+        } else if (what === 'content') {
+            xpath = '//content';
+        } else if (what === 'theme') {
+            xpath = '//theme';
+        }
+        nodes = this.xpath(xpath);
+        node = nodes.iterateNext();
+        while (node) {
+            id = Math.max(id, parseInt(node.getAttribute('id')));
+            node = nodes.iterateNext();
+        }
+        return id;
+    };
+
+    //
+    app.xpath = function (xpath, singleNode) {
+        var nodes;
+        if (singleNode) {
+            nodes = this.xml.evaluate(xpath, this.xml, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+            return nodes.singleNodeValue;
+        } else {
+            nodes = this.xml.evaluate(xpath, this.xml, null, XPathResult.ANY_TYPE, null);
+            return nodes;
+        }
     };
 
     app.init();
