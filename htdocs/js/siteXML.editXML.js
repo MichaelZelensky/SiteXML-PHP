@@ -74,17 +74,20 @@ $(function(){
     app.bindEvents = function () {
         var me = this;
         this.els.container.on('click', function (e) {
-            var ul, newli, newNode, id, parser,
+            var ul, li, newli, newNode, id, parser,
                 el = $(e.target);
             if (el.is('li')) {
                 if (el.is('.collapsible')) {
                     el.toggleClass('collapsed');
                 }
+                me.els.container.find('.selected').removeClass('selected');
+                el.addClass('selected');
                 me.showProperties(el);
             } else if (el.is('.panel-button')) {
                 me.els.container.toggleClass('collapsed');
             } else if (el.is('.button')) {
-                ul = el.closest('li').children('ul');
+                li = el.closest('li');
+                ul = li.children('ul');
                 if (!ul.length) {
                     ul = $('<ul></ul>');
                     el.closest('li').append(ul);
@@ -95,7 +98,9 @@ $(function(){
                     newNode = parser.parseFromString('<page id="' + id + '" />', "application/xml");
                     newli = me.renderItem(newNode.childNodes[0]);
                     ul.append(newli);
+                    $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
                 }
+                me.saveXML();
                 return false;
             }
         });
@@ -205,10 +210,11 @@ $(function(){
     app.renderItem = function (child) {
         var name, dataAttributes, cl, buttons, nameLC,
             html = '',
-            pb = ' <a href="#" class="addPage button">[+p]</a>',
-            mb = ' <a href="#" class="addMeta button">[+m]</a>',
-            cb = ' <a href="#" class="addContent button">[+c]</a>',
-            tb = ' <a href="#" class="addTheme button">[+t]</a>';
+            pb = ' <a href="#" class="addPage button" title="Add page">[+p]</a>',
+            mb = ' <a href="#" class="addMeta button" title="Add meta">[+m]</a>',
+            cb = ' <a href="#" class="addContent button" title="Add content">[+c]</a>',
+            minusb = ' <a href="#" class="delete button" title="Remove">[-]</a>',
+            tb = ' <a href="#" class="addTheme button" title="Add theme">[+t]</a>';
         nameLC = child.nodeName.toLowerCase();
         if (['site', 'theme', 'page'].indexOf(nameLC) >= 0) {
             cl = 'collapsed collapsible';
@@ -218,9 +224,11 @@ $(function(){
         if (nameLC === 'site') {
             buttons = pb + mb + tb;
         } else if (nameLC === 'page') {
-            buttons = pb + mb + cb;
+            buttons = pb + mb + cb + minusb;
         } else if (nameLC === 'theme') {
-            buttons = mb + cb;
+            buttons = mb + cb + minusb;
+        } else if (nameLC === 'meta' || nameLC === 'content') {
+            buttons = minusb;
         } else {
             buttons = '';
         }
@@ -284,6 +292,21 @@ $(function(){
             nodes = this.xml.evaluate(xpath, this.xml, null, XPathResult.ANY_TYPE, null);
             return nodes;
         }
+    };
+
+    //
+    app.saveXML = function () {
+        var xml,
+            s = new XMLSerializer();
+        xml = s.serializeToString(this.xml);
+        $.ajax({
+            method: 'post',
+            url: '/',
+            data: {
+                sitexml : xml
+            }
+
+        });
     };
 
     app.init();

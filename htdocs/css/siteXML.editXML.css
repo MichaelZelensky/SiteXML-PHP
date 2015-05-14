@@ -28,9 +28,16 @@
 #siteXML-editXML-container .button {
     color: #ccc;
     text-decoration: none;
+    display: none;
+}
+#siteXML-editXML-container li.selected > .button {
+    display: inline-block;
 }
 #siteXML-editXML-container .properties {
-    padding: 20px;
+    overflow: hidden;
+}
+#siteXML-editXML-container .properties table {
+    margin: 20px 0 0 20px;
 }
 #siteXML-editXML-container .tree {
     height: 50%;

@@ -42,7 +42,13 @@ $method = $_SERVER['REQUEST_METHOD'];
 switch($method) {
 
     case 'POST':
-        if (isset($_POST['cid']) && isset($_POST['content'])) {
+        if (isset($_POST['sitexml'])) {
+            if ($siteXML->saveXML($_POST['sitexml'])) {
+                echo 'siteXML saved';
+            } else {
+                $siteXML->error('siteXML was not saved');
+            }
+        } elseif (isset($_POST['cid']) && isset($_POST['content'])) {
             $siteXML->saveContent($_POST['cid'], $_POST['content']);
         } elseif (isset($_POST['username']) && isset($_POST['password'])) {
             $siteXML->login();
@@ -579,6 +585,11 @@ class SiteXML {
     //
     function getXML () {
         return file_get_contents(siteXML);
+    }
+
+    //
+    function saveXML ($xmlstr) {
+        return file_put_contents(siteXML, $xmlstr);
     }
 
     //
