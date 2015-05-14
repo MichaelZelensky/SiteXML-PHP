@@ -7,6 +7,8 @@
  */
 
 $(function(){
+    'use strict';
+
     var app = {
         els : {}
     };
@@ -30,11 +32,16 @@ $(function(){
             '<tr class="properties-type"><td>Type</td><td><input type="text"></td></tr>' +
             '<tr class="properties-content"><td>Content</td><td><input type="text"></td></tr>' +
             '<tr class="properties-nodeContent"><td>Node content</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-charset"><td>Charset</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-http-equiv"><td>Http-equiv</td><td><input type="text"></td></tr>' +
+            '<tr class="properties-scheme"><td>Scheme</td><td><input type="text"></td></tr>' +
             '</table>' +
             '</div></div>')
             .css({
                 zIndex : this.getMaxZIndex() + 1
             });
+        container.find('input').after(' <span class="not-specified">Not specified</span>');
+        container.find('tr').addClass('property');
         $('body').append(container);
         this.els.container = container;
         this.cacheEls();
@@ -54,6 +61,9 @@ $(function(){
         this.els.propertiesFile = this.find('.properties-file');
         this.els.propertiesContent = this.find('.properties-content');
         this.els.propertiesType = this.find('.properties-type');
+        this.els.propertiesHttpEquiv = this.find('.properties-http-equiv');
+        this.els.propertiesScheme = this.find('.properties-scheme');
+        this.els.propertiesCharset = this.find('.properties-charset');
         this.els.propertiesNodeContent = this.find('.properties-nodeContent');
     };
 
@@ -76,13 +86,14 @@ $(function(){
         this.els.container.on('click', function (e) {
             var ul, li, newli, newNode, id, parser,
                 el = $(e.target);
-            if (el.is('li')) {
-                if (el.is('.collapsible')) {
-                    el.toggleClass('collapsed');
-                }
+            if (el.is('.expand-button')) {
+                li = el.closest('li');
+                li.toggleClass('collapsed');
+            } else if (el.is('.node-name')) {
+                li = el.closest('li');
                 me.els.container.find('.selected').removeClass('selected');
-                el.addClass('selected');
-                me.showProperties(el);
+                li.addClass('selected');
+                me.showProperties(li);
             } else if (el.is('.panel-button')) {
                 me.els.container.toggleClass('collapsed');
             } else if (el.is('.button')) {
@@ -92,13 +103,40 @@ $(function(){
                     ul = $('<ul></ul>');
                     el.closest('li').append(ul);
                 }
-                if (el.is('.addPage')) {
-                    id = me.getMaxId('page') + 1;
+                if (el.is('.delete')) {
+                    li.removeClass('collapsed');
+                    if (confirm('Delete element with all children?')) {
+                        $(me.getNode(li.data('nodename'), li.data('id'))).remove();
+                        li.remove();
+                    } else {
+                        li.addClass('collapsed');
+                    }
+                } else {
                     parser = new DOMParser();
-                    newNode = parser.parseFromString('<page id="' + id + '" />', "application/xml");
-                    newli = me.renderItem(newNode.childNodes[0]);
+                    if (el.is('.addPage')) {
+                        id = me.getMaxId('page') + 1;
+                        newNode = parser.parseFromString('<page id="' + id + '" />', "application/xml");
+                        newli = me.renderItem(newNode.childNodes[0]);
+                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
+                    } else if (el.is('.addMeta')) {
+                        newNode = parser.parseFromString('<meta />', "application/xml");
+                        newli = me.renderItem(newNode.childNodes[0]);
+                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
+                    } else if (el.is('.addContent')) {
+                        id = me.getMaxId('content') + 1;
+                        newNode = parser.parseFromString('<content id="' + id + '" />', "application/xml");
+                        newli = me.renderItem(newNode.childNodes[0]);
+                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
+                    } else if (el.is('.addTheme')) {
+                        id = me.getMaxId('theme') + 1;
+                        newNode = parser.parseFromString('<theme id="' + id + '" />', "application/xml");
+                        newli = me.renderItem(newNode.childNodes[0]);
+                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
+                    }
+                    newli = $(newli);
+                    li.removeClass('collapsed');
                     ul.append(newli);
-                    $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
+                    me.blink(newli);
                 }
                 me.saveXML();
                 return false;
@@ -135,21 +173,74 @@ $(function(){
             this.els.propertiesDir.show();
             this.els.propertiesFile.show();
         } else if (nodeNameLC === 'meta') {
-
+            this.els.propertiesName.show();
+            this.els.propertiesContent.show();
+            this.els.propertiesCharset.show();
+            this.els.propertiesHttpEquiv.show();
+            this.els.propertiesScheme.show();
         }
     };
 
     //
     app.setAllProperties = function (node) {
+        if (node.hasAttribute('name')) {
+            this.els.propertiesName.removeClass('not-specified')
+        }
         this.els.propertiesName.find('input').val(node.getAttribute('name'));
+
+        if (node.hasAttribute('id')) {
+            this.els.propertiesId.removeClass('not-specified')
+        }
         this.els.propertiesId.find('input').val(node.getAttribute('id'));
+
+        if (node.hasAttribute('alias')) {
+            this.els.propertiesAlias.removeClass('not-specified')
+        }
         this.els.propertiesAlias.find('input').val(node.getAttribute('alias'));
+
+        if (node.hasAttribute('dir')) {
+            this.els.propertiesDir.removeClass('not-specified')
+        }
         this.els.propertiesDir.find('input').val(node.getAttribute('dir'));
+
+        if (node.hasAttribute('file')) {
+            this.els.propertiesFile.removeClass('not-specified')
+        }
         this.els.propertiesFile.find('input').val(node.getAttribute('file'));
+
+        if (node.hasAttribute('type')) {
+            this.els.propertiesType.removeClass('not-specified')
+        }
         this.els.propertiesType.find('input').val(node.getAttribute('type'));
+
+        if (node.hasAttribute('content')) {
+            this.els.propertiesContent.removeClass('not-specified')
+        }
         this.els.propertiesContent.find('input').val(node.getAttribute('content'));
+
+        if (node.hasAttribute('theme')) {
+            this.els.propertiesTheme.removeClass('not-specified')
+        }
         this.els.propertiesTheme.find('input').val(node.getAttribute('theme'));
-        this.els.propertiesNodeContent.find('input').val(node.textContent);
+
+        this.els.propertiesNodeContent
+            .removeClass('not-specified')
+            .find('input').val(node.textContent);
+
+        if (node.hasAttribute('scheme')) {
+            this.els.propertiesScheme.removeClass('not-specified')
+        }
+        this.els.propertiesScheme.find('input').val(node.getAttribute('scheme'));
+
+        if (node.hasAttribute('http-equiv')) {
+            this.els.propertiesHttpEquiv.removeClass('not-specified')
+        }
+        this.els.propertiesHttpEquiv.find('input').val(node.getAttribute('http-equiv'));
+
+        if (node.hasAttribute('charset')) {
+            this.els.propertiesCharset.removeClass('not-specified')
+        }
+        this.els.propertiesCharset.find('input').val(node.getAttribute('charset'));
     };
 
     //
@@ -166,18 +257,9 @@ $(function(){
 
     //
     app.hideAllPropertyFields = function () {
-        this.els.propertiesId.hide();
-        this.els.propertiesStartPage.hide();
-        this.els.propertiesDefault.hide();
-        this.els.propertiesType.hide();
-        this.els.propertiesShow.hide();
-        this.els.propertiesName.hide();
-        this.els.propertiesAlias.hide();
-        this.els.propertiesTheme.hide();
-        this.els.propertiesDir.hide();
-        this.els.propertiesFile.hide();
-        this.els.propertiesContent.hide();
-        this.els.propertiesNodeContent.hide();
+        this.els.container.find('tr.property')
+            .addClass('not-specified')
+            .hide();
     };
 
     //
@@ -237,8 +319,11 @@ $(function(){
         name = child.getAttribute('name');
         name = (name) ? ' name="' + name + '"' : '';
         html += '<li class="' + cl + '" ' + dataAttributes + '>'
+            + '<span class="expand-button"></span>'
+            + '<span class="node-name">'
             + child.nodeName
             + name
+            + '</span>'
             + buttons;
 
         return html;
@@ -307,6 +392,14 @@ $(function(){
             }
 
         });
+    };
+
+    //
+    app.blink = function (el) {
+        el.removeClass('blink').addClass('blink');
+        window.setTimeout(function () {
+            el.removeClass('blink');
+        }, 250);
     };
 
     app.init();
