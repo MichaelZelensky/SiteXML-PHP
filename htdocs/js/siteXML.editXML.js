@@ -10,7 +10,8 @@ $(function(){
     'use strict';
 
     var app = {
-        els : {}
+        els : {},
+        state : {}
     };
 
     //
@@ -19,11 +20,12 @@ $(function(){
             '<div class="panel-button"></div>' +
             '<div class="tree"></div>' +
             '<div class="properties">' +
+            '<a class="close">x</a>' +
             '<table>' +
             '<tr class="properties-id"><td>Id</td><td><input type="text"></td></tr>' +
             '<tr class="properties-default"><td>Default</td><td><input type="checkbox"></td></tr>' +
             '<tr class="properties-startPage"><td>Start page</td><td><input type="checkbox"></td></tr>' +
-            '<tr class="properties-show"><td>Show</td><td><input type="checkbox"></td></tr>' +
+            '<tr class="properties-nonavi"><td>Nonavi</td><td><input type="checkbox"></td></tr>' +
             '<tr class="properties-name"><td>Name</td><td><input type="text"></td></tr>' +
             '<tr class="properties-alias"><td>Alias</td><td><input type="text"></td></tr>' +
             '<tr class="properties-theme"><td>Theme</td><td><input type="text"></td></tr>' +
@@ -53,7 +55,7 @@ $(function(){
         this.els.propertiesId = this.find('.properties-id');
         this.els.propertiesDefault = this.find('.properties-default');
         this.els.propertiesStartPage = this.find('.properties-startPage');
-        this.els.propertiesShow = this.find('.properties-show');
+        this.els.propertiesNonavi = this.find('.properties-nonavi');
         this.els.propertiesName = this.find('.properties-name');
         this.els.propertiesAlias = this.find('.properties-alias');
         this.els.propertiesTheme = this.find('.properties-theme');
@@ -84,7 +86,10 @@ $(function(){
     app.bindEvents = function () {
         var me = this;
         this.els.container.on('click', function (e) {
-            var ul, li, newli, newNode, id, parser,
+            var ul, li, newli, newNode, id, parser, parentNode, afterNode, beforeNode,
+                doPrepend = false,
+                beforeEl = false,
+                afterEl = false,
                 el = $(e.target);
             if (el.is('.expand-button')) {
                 li = el.closest('li');
@@ -103,7 +108,7 @@ $(function(){
                     ul = $('<ul></ul>');
                     el.closest('li').append(ul);
                 }
-                if (el.is('.delete')) {
+                if (el.is('.delete')) { //delete element
                     li.removeClass('collapsed');
                     if (confirm('Delete element with all children?')) {
                         $(me.getNode(li.data('nodename'), li.data('id'))).remove();
@@ -111,37 +116,159 @@ $(function(){
                     } else {
                         li.addClass('collapsed');
                     }
-                } else {
+                } else { //add elements
                     parser = new DOMParser();
-                    if (el.is('.addPage')) {
+                    if (el.is('.addPage')) { //add page preparations
                         id = me.getMaxId('page') + 1;
                         newNode = parser.parseFromString('<page id="' + id + '" />', "application/xml");
-                        newli = me.renderItem(newNode.childNodes[0]);
-                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
-                    } else if (el.is('.addMeta')) {
+
+                    } else if (el.is('.addMeta')) { //add meta preparations
+                        afterEl = ul.find('[data-nodename="meta"]');
+                        if (afterEl.length) {
+                            parentNode = me.getNode(li.data('nodename'), li.data('id'));
+                            afterEl = afterEl.last();
+                            afterNode = $(parentNode).find('meta').last();
+                        } else {
+                            afterEl = false;
+                            doPrepend = true;
+                        }
                         newNode = parser.parseFromString('<meta />', "application/xml");
-                        newli = me.renderItem(newNode.childNodes[0]);
-                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
-                    } else if (el.is('.addContent')) {
+
+                    } else if (el.is('.addContent')) { //add content preparations
                         id = me.getMaxId('content') + 1;
+                        afterEl = ul.find('[data-nodename="content"]');
+                        if (afterEl.length) {
+                            parentNode = me.getNode(li.data('nodename'), li.data('id'));
+                            afterEl = afterEl.last();
+                            afterNode = $(parentNode).find('content').last();
+                        } else {
+                            afterEl = false;
+                            doPrepend = true;
+                        }
                         newNode = parser.parseFromString('<content id="' + id + '" />', "application/xml");
-                        newli = me.renderItem(newNode.childNodes[0]);
-                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
-                    } else if (el.is('.addTheme')) {
+
+                    } else if (el.is('.addTheme')) { //add theme preparations
                         id = me.getMaxId('theme') + 1;
                         newNode = parser.parseFromString('<theme id="' + id + '" />', "application/xml");
-                        newli = me.renderItem(newNode.childNodes[0]);
-                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
                     }
+                    newli = me.renderItem(newNode.childNodes[0]);
                     newli = $(newli);
+                    if (afterEl) {
+                        $(afterNode).after(newNode.childNodes[0]);
+                        afterEl.after(newli);
+                    } else if (doPrepend) {
+                        $(me.getNode(li.data('nodename'), li.data('id'))).prepend(newNode.childNodes[0]);
+                        ul.prepend(newli);
+                    } else {
+                        $(me.getNode(li.data('nodename'), li.data('id'))).append(newNode.childNodes[0]);
+                        ul.append(newli);
+                    }
                     li.removeClass('collapsed');
-                    ul.append(newli);
                     me.blink(newli);
                 }
                 me.saveXML();
                 return false;
+            } else if (el.is('.close')) {
+                me.els.container.removeClass('withProperties');
             }
         });
+        me.els.container.find('.properties').find('input').on('input change', function () {
+            var li,
+                sn = $(me.state.selectedNode),
+                v = this.value,
+                cl = 'not-specified',
+                save = true;
+            switch (this) {
+                case me.els.propertiesId.find('input')[0]:
+                    me.state.selectedNode.id = v;
+                    break;
+                case me.els.propertiesName.find('input')[0]:
+                    me.els.propertiesName.removeClass(cl);
+                    sn.attr('name', v);
+                    break;
+                case me.els.propertiesAlias.find('input')[0]:
+                    me.els.propertiesAlias.removeClass(cl);
+                    sn.attr('alias', v);
+                    break;
+                case me.els.propertiesType.find('input')[0]:
+                    me.els.propertiesType.removeClass(cl);
+                    sn.attr('type', v);
+                    break;
+                case me.els.propertiesDir.find('input')[0]:
+                    me.els.propertiesDir.removeClass(cl);
+                    sn.attr('dir', v);
+                    break;
+                case me.els.propertiesFile.find('input')[0]:
+                    me.els.propertiesFile.removeClass(cl);
+                    sn.attr('file', v);
+                    break;
+                case me.els.propertiesTheme.find('input')[0]:
+                    me.els.propertiesTheme.removeClass(cl);
+                    sn.attr('theme', v);
+                    break;
+                case me.els.propertiesContent.find('input')[0]:
+                    me.els.propertiesContent.removeClass(cl);
+                    sn.attr('content', v);
+                    break;
+                case me.els.propertiesCharset.find('input')[0]:
+                    me.els.propertiesCharset.removeClass(cl);
+                    sn.attr('charset', v);
+                    break;
+                case me.els.propertiesHttpEquiv.find('input')[0]:
+                    me.els.propertiesHttpEquiv.removeClass(cl);
+                    sn.attr('http-equiv', v);
+                    break;
+                case me.els.propertiesScheme.find('input')[0]:
+                    me.els.propertiesScheme.removeClass(cl);
+                    sn.attr('scheme', v);
+                    break;
+                case me.els.propertiesStartPage.find('input')[0]:
+                    if (this.checked) {
+                        me.clearStartPage();
+                        sn.attr('startpage', 'yes');
+                        me.els.propertiesStartPage.removeClass(cl);
+                    } else {
+                        sn.removeAttr('startpage');
+                        me.els.propertiesStartPage.addClass(cl);
+                    }
+                    break;
+                case me.els.propertiesDefault.find('input')[0]:
+                    if (this.checked) {
+                        me.clearDefaultTheme();
+                        me.els.propertiesDefault.removeClass(cl);
+                        sn.attr('default', 'yes');
+                    } else {
+                        me.els.propertiesDefault.addClass(cl);
+                        sn.removeAttr('default');
+                    }
+                    break;
+                case me.els.propertiesNonavi.find('input')[0]:
+                    if (this.checked) {
+                        me.els.propertiesNonavi.removeClass(cl);
+                        sn.attr('nonavi', 'yes');
+                    } else {
+                        me.els.propertiesNonavi.addClass(cl);
+                        sn.removeAttr('nonavi');
+                    }
+                    break;
+                default :
+                    save = false;
+                    break;
+            }
+            if (save) {
+                me.saveXML();
+            }
+        });
+    };
+
+    //
+    app.clearStartPage = function () {
+        $(this.xml).find('page[startpage=yes]').removeAttr('startpage');
+    };
+
+    //
+    app.clearDefaultTheme = function () {
+        $(this.xml).find('theme[default=yes]').removeAttr('default');
     };
 
     //
@@ -150,6 +277,9 @@ $(function(){
             nodeName = el.data('nodename'),
             nodeNameLC = nodeName.toLowerCase(),
             node = this.getNode(nodeName, id);
+        this.state.selectedLi = el;
+        this.state.selectedNode = node;
+        this.els.container.addClass('withProperties');
         this.els.container.find('table').show();
         this.hideAllPropertyFields();
         this.setAllProperties(node);
@@ -158,7 +288,7 @@ $(function(){
         } else if (nodeNameLC === 'page') {
             this.els.propertiesId.show();
             this.els.propertiesStartPage.show();
-            this.els.propertiesShow.show();
+            this.els.propertiesNonavi.show();
             this.els.propertiesName.show();
             this.els.propertiesAlias.show();
             this.els.propertiesTheme.show();
@@ -183,64 +313,90 @@ $(function(){
 
     //
     app.setAllProperties = function (node) {
+        var checked,
+            cl = 'not-specified';
         if (node.hasAttribute('name')) {
-            this.els.propertiesName.removeClass('not-specified')
+            this.els.propertiesName.removeClass(cl);
         }
         this.els.propertiesName.find('input').val(node.getAttribute('name'));
 
         if (node.hasAttribute('id')) {
-            this.els.propertiesId.removeClass('not-specified')
+            this.els.propertiesId.removeClass(cl);
         }
         this.els.propertiesId.find('input').val(node.getAttribute('id'));
 
         if (node.hasAttribute('alias')) {
-            this.els.propertiesAlias.removeClass('not-specified')
+            this.els.propertiesAlias.removeClass(cl);
         }
         this.els.propertiesAlias.find('input').val(node.getAttribute('alias'));
 
         if (node.hasAttribute('dir')) {
-            this.els.propertiesDir.removeClass('not-specified')
+            this.els.propertiesDir.removeClass(cl);
         }
         this.els.propertiesDir.find('input').val(node.getAttribute('dir'));
 
         if (node.hasAttribute('file')) {
-            this.els.propertiesFile.removeClass('not-specified')
+            this.els.propertiesFile.removeClass(cl);
         }
         this.els.propertiesFile.find('input').val(node.getAttribute('file'));
 
         if (node.hasAttribute('type')) {
-            this.els.propertiesType.removeClass('not-specified')
+            this.els.propertiesType.removeClass(cl);
         }
         this.els.propertiesType.find('input').val(node.getAttribute('type'));
 
         if (node.hasAttribute('content')) {
-            this.els.propertiesContent.removeClass('not-specified')
+            this.els.propertiesContent.removeClass(cl);
         }
         this.els.propertiesContent.find('input').val(node.getAttribute('content'));
 
         if (node.hasAttribute('theme')) {
-            this.els.propertiesTheme.removeClass('not-specified')
+            this.els.propertiesTheme.removeClass(cl);
         }
         this.els.propertiesTheme.find('input').val(node.getAttribute('theme'));
 
         this.els.propertiesNodeContent
-            .removeClass('not-specified')
+            .removeClass(cl)
             .find('input').val(node.textContent);
 
         if (node.hasAttribute('scheme')) {
-            this.els.propertiesScheme.removeClass('not-specified')
+            this.els.propertiesScheme.removeClass(cl)
         }
         this.els.propertiesScheme.find('input').val(node.getAttribute('scheme'));
 
         if (node.hasAttribute('http-equiv')) {
-            this.els.propertiesHttpEquiv.removeClass('not-specified')
+            this.els.propertiesHttpEquiv.removeClass(cl)
         }
         this.els.propertiesHttpEquiv.find('input').val(node.getAttribute('http-equiv'));
 
         if (node.hasAttribute('charset')) {
-            this.els.propertiesCharset.removeClass('not-specified')
+            this.els.propertiesCharset.removeClass(cl)
         }
         this.els.propertiesCharset.find('input').val(node.getAttribute('charset'));
+
+        if (node.hasAttribute('default')) {
+            this.els.propertiesDefault.removeClass(cl);
+            checked = ($(node).attr('default').toLowerCase() === 'yes');
+        } else {
+            checked = false;
+        }
+        this.els.propertiesDefault.find('input').prop('checked', checked);
+
+        if (node.hasAttribute('startpage')) {
+            this.els.propertiesStartPage.removeClass(cl);
+            checked = ($(node).attr('startpage').toLowerCase() === 'yes');
+        } else {
+            checked = false;
+        }
+        this.els.propertiesStartPage.find('input').prop('checked', checked);
+
+        if (node.hasAttribute('nonavi')) {
+            this.els.propertiesNonavi.removeClass(cl);
+            checked = ($(node).attr('nonavi').toLowerCase() === 'yes');
+        } else {
+            checked = false;
+        }
+        this.els.propertiesNonavi.find('input').prop('checked', checked);
     };
 
     //
@@ -291,6 +447,7 @@ $(function(){
     //
     app.renderItem = function (child) {
         var name, dataAttributes, cl, buttons, nameLC,
+            id = '',
             html = '',
             pb = ' <a href="#" class="addPage button" title="Add page">[+p]</a>',
             mb = ' <a href="#" class="addMeta button" title="Add meta">[+m]</a>',
@@ -315,13 +472,16 @@ $(function(){
             buttons = '';
         }
         dataAttributes = 'data-id="' + child.id + '"'
-            + 'data-nodename="' + child.nodeName + '"'
+            + 'data-nodename="' + child.nodeName + '"';
+        id = child.id;
+        id = (id) ? ' id="' + id + '"' : '';
         name = child.getAttribute('name');
         name = (name) ? ' name="' + name + '"' : '';
         html += '<li class="' + cl + '" ' + dataAttributes + '>'
             + '<span class="expand-button"></span>'
             + '<span class="node-name">'
             + child.nodeName
+            + id
             + name
             + '</span>'
             + buttons;
@@ -402,5 +562,6 @@ $(function(){
         }, 250);
     };
 
+    /* * */
     app.init();
 });

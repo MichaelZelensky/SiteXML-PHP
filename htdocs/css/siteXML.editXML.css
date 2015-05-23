@@ -39,22 +39,35 @@
 #siteXML-editXML-container li.selected > .button {
     display: inline-block;
 }
+#siteXML-editXML-container .properties > .close {
+    float: right;
+    padding: 3px 6px 0 0;
+    color: #d4d4d4;
+}
 #siteXML-editXML-container .properties {
     overflow: hidden;
+    display: none;
 }
 #siteXML-editXML-container .properties table {
     margin: 20px 0 0 20px;
 }
 #siteXML-editXML-container .property.not-specified .not-specified {
     display: inline-block;
+    font-style: italic;
 }
 #siteXML-editXML-container .property .not-specified {
     display: none;
 }
 #siteXML-editXML-container .tree {
-    height: 50%;
     overflow: auto;
     border-bottom: 1px solid #D4D4DB;
+    height: 100%;
+}
+#siteXML-editXML-container.withProperties .properties {
+    display: block;
+}
+#siteXML-editXML-container.withProperties .tree {
+    height: 50%;
 }
 #siteXML-editXML-container ul {
     list-style: none;
@@ -63,6 +76,7 @@
 }
 #siteXML-editXML-container li {
     padding-left: 10px;
+    white-space: nowrap;
 }
 #siteXML-editXML-container li.collapsible {
     padding-left: 0;

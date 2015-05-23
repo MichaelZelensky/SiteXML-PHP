@@ -429,8 +429,10 @@ class SiteXML {
     function singleMetaHTML ($metaObj) {
         $attr = $this->attributes($metaObj);
         $metaHTML = '<meta';
-        foreach ($attr as $k => $v) {
-            $metaHTML .= " $k=\"$v\"";
+        if ($attr) {
+            foreach ($attr as $k => $v) {
+                $metaHTML .= " $k=\"$v\"";
+            }
         }
         $metaHTML .= ">";
         return $metaHTML;
@@ -497,6 +499,9 @@ class SiteXML {
             foreach($obj as $k => $v) {
                 if (strtolower($k) == 'page') {
                     $attr = $this->attributes($v);
+                    if (isset($attr['nonavi']) && strtolower($attr['nonavi']) === 'yes') {
+                        continue;
+                    }
                     $href = (isset($attr['alias'])) ? '/' . $attr['alias'] : '/?id=' . $attr['id'];
                     $HTML .= '<li><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
                     $HTML .= $this->getNavi($v, $maxlevel, $level);
