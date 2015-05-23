@@ -1,9 +1,13 @@
 /**
  * SiteXML XML edit script
+ * http://sitexml.info
  *
  * requires jQuery
  *
  * @author Michael Zelensky 2015
+ *
+ * NOTE: SiteXML XML elements must be lowercase, uppercase or mixed element names are not supported
+ *
  */
 
 $(function(){
