@@ -1,4 +1,7 @@
 <?php
+
+//TODO: edit PLINK converts <%PLINK(x)%> to <a href="x">y</a>, so PLINK is lost
+
 /**
  * SiteXML parser
  *
@@ -516,7 +519,6 @@ class SiteXML {
     //
     function replaceNavi($HTML) {
         $HTML = str_replace('<%NAVI%>', $this->getNavi(), $HTML);
-        //replacing macrocommands like <%NAVI(1,2)% >
         $pos = strpos($HTML, '<%NAVI', 0);
         while ($pos) {
             $pos1 = strpos($HTML, '(', $pos + 1);
@@ -539,6 +541,41 @@ class SiteXML {
     }
 
     //
+    function replacePlink($HTML) {
+        $pos = strpos($HTML, '<%PLINK');
+        while ($pos) {
+            $pos1 = strpos($HTML, '(', $pos + 1);
+            $pos2 = strpos($HTML, ')', $pos + 1);
+            if ($pos1 && $pos2) {
+                $arg = substr($HTML, $pos1 + 1 , $pos2 - $pos1 - 1);
+            } else {
+                $arg = false;
+            }
+            if ($arg) {
+                $needle = "<%PLINK(" . $arg . ")%>";
+                $replace = $this->getPlink($arg);
+                $HTML = str_replace($needle, $replace, $HTML);
+            }
+            $pos = strpos($HTML, '<%PLINK', $pos + 1);
+        }
+        return $HTML;
+    }
+
+    //
+    function getPlink($id) {
+        $pageObj = $this->getPageObj($id);
+        $attr = $this->attributes($pageObj);
+        if (!empty($attr['alias'])) {
+            $href = '/' . $attr['alias'];
+        } else {
+            $href = '/?id=' . $id;
+        }
+        $pname = $attr['name'];
+        $html = '<a href="'. $href .'" plink="'. $id .'">'. $pname .'</a>';
+        return $html;
+    }
+
+    //
     function appendScripts($HTML) {
         $pos = stripos($HTML, "</body>");
         $scripts = '<script src="/js/jquery-2.1.3.min.js"></script>' .
@@ -553,7 +590,7 @@ class SiteXML {
         }
         return $HTML;
     }
-    
+
     //
     function page () {
         $pageHTML = $this->getThemeHTML($this->themeObj);
@@ -561,6 +598,7 @@ class SiteXML {
         $pageHTML = $this->replacePageContent($pageHTML);
         $pageHTML = $this->replaceThemeContent($pageHTML);
         $pageHTML = $this->replaceMacroCommands($pageHTML);
+        $pageHTML = $this->replacePlink($pageHTML);
         $pageHTML = $this->appendScripts($pageHTML);
         return $pageHTML;
     }
