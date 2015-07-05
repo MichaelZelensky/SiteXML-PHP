@@ -1,6 +1,6 @@
 <?php
 
-//TODO: edit PLINK converts <%PLINK(x)%> to <a href="x">y</a>, so PLINK is lost
+/*TODO: edit PLINK converts <%PLINK(x)%> to <a href="x">y</a>, so PLINK is lost */
 
 /**
  * SiteXML parser
@@ -498,7 +498,7 @@ class SiteXML {
         $level ++;
         if (!$obj) $obj = $this->obj;
         $HTML = '';
-        if ($maxlevel <> 0 && $maxlevel >= $level) {
+        if ($maxlevel === 0 || $maxlevel >= $level) {
             foreach($obj as $k => $v) {
                 if (strtolower($k) == 'page') {
                     $attr = $this->attributes($v);
