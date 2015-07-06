@@ -505,8 +505,9 @@ class SiteXML {
                     if (isset($attr['nonavi']) && strtolower($attr['nonavi']) === 'yes') {
                         continue;
                     }
+                    $liClass = ($attr['id'] == $this->pid) ? ' class="siteMXL-current"' : '';
                     $href = (isset($attr['alias'])) ? '/' . $attr['alias'] : '/?id=' . $attr['id'];
-                    $HTML .= '<li><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
+                    $HTML .= '<li' . $liClass . '><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
                     $HTML .= $this->getNavi($v, $maxlevel, $level);
                     $HTML .= '</li>';
                 }
