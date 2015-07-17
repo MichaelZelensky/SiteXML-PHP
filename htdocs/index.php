@@ -77,6 +77,8 @@ switch($method) {
             echo $siteXML->loginScreen();
         } elseif (!empty($_GET['cid'])) {
             echo $siteXML->getContent($_GET['cid']);
+        } elseif (!empty($_GET['id']) && !empty($_GET['name'])) {
+            echo $siteXML->getContentByIdAndName($_GET['id'], $_GET['name']);
         } else {
             echo $siteXML->page();
         }
@@ -654,8 +656,24 @@ class SiteXML {
     }
 
     //
-    function getContent ($cid) {
-        $file = $this->obj->xpath("//content[@id='$cid']");
+    function getContentByIdAndName ($id, $name) {
+        $c = $this->obj->xpath("//page[@id='$id']/content[@name='$name']");
+        $attr = $this->attributes($c[0]);
+        $cid = $attr['id'];
+        return $this->getContent($cid, $c);
+    }
+
+    /*
+     * @param {Integer | String} $cid - content id
+     * @param {XML Object} $cobj - not required; content node object
+     * */
+    function getContent ($cid, $cobj = false) {
+        if (!$cobj) {
+            $file = $this->obj->xpath("//content[@id='$cid']");
+        } else {
+            $file = $cobj;
+        }
+
         $file = CONTENT_DIR . $file[0];
         if (file_exists($file)) {
             $content = file_get_contents($file);
