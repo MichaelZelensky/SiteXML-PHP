@@ -15,6 +15,7 @@
     padding-top: 10px;
     cursor: default;
     transition: width .05s;
+    text-align: left;
 }
 #siteXML-editXML-container.collapsed {
     width: 0;
