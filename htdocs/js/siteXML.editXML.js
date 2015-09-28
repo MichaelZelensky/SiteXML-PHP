@@ -127,11 +127,11 @@ $(function(){
                         newNode = parser.parseFromString('<page id="' + id + '" />', "application/xml");
 
                     } else if (el.is('.addMeta')) { //add meta preparations
-                        afterEl = ul.find('[data-nodename="meta"]');
+                        afterEl = ul.children('[data-nodename="meta"]');
                         if (afterEl.length) {
                             parentNode = me.getNode(li.data('nodename'), li.data('id'));
                             afterEl = afterEl.last();
-                            afterNode = $(parentNode).find('meta').last();
+                            afterNode = $(parentNode).children('meta').last();
                         } else {
                             afterEl = false;
                             doPrepend = true;
@@ -140,11 +140,11 @@ $(function(){
 
                     } else if (el.is('.addContent')) { //add content preparations
                         id = me.getMaxId('content') + 1;
-                        afterEl = ul.find('[data-nodename="content"]');
+                        afterEl = ul.children('[data-nodename="content"]');
                         if (afterEl.length) {
                             parentNode = me.getNode(li.data('nodename'), li.data('id'));
                             afterEl = afterEl.last();
-                            afterNode = $(parentNode).find('content').last();
+                            afterNode = $(parentNode).children('content').last();
                         } else {
                             afterEl = false;
                             doPrepend = true;

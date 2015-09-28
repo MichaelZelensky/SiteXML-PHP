@@ -1,4 +1,7 @@
 #siteXML-editXML-container,
+#siteXML-editXML-container a,
+#siteXML-editXML-container span,
+#siteXML-editXML-container td,
 #siteXML-editXML-container table {
     font-family: Arial, sans-serif;
     color: #222;
