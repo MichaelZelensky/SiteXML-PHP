@@ -4,8 +4,11 @@ Server-side site engine based on SiteXML specifications.
 
 USAGE:
 
-Simply copy index.php to your site directory. Site structure must be in full accordance with SiteXML standard:
+Copy files to your sever. Enjoy.
 
-The minimum requirement is existance of .site.xml file in the site root. 
+NOTES:
+
+- In order to make paths work work set AllowOverride All in Apache config site
+- The minimum requirement is the presence of .site.xml file in the site root.
 
 More info on SiteXML at: www.sitexml.info
