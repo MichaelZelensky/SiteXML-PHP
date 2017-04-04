@@ -101,6 +101,7 @@ class SiteXML {
     var $obj;
     var $pageObj;
     var $editMode = false;
+    var $basePath;
 
     //
     function siteXML() {
@@ -109,7 +110,7 @@ class SiteXML {
         $this->pid = $this->getPid();
         $this->pageObj = $this->getPageObj($this->pid);
         $this->themeObj = $this->getTheme();
-        //print_r($this->obj);
+        $this->basePath = $this->getSiteBasePath();
     }
 
     //
@@ -381,6 +382,17 @@ class SiteXML {
     }
 
     //
+    function getSiteBasePath () {
+        $attr = $this->attributes($this->obj);
+        if (isset($attr['base_path'])) {
+            $basePath = $attr['base_path'];
+        } else {
+            $basePath = null;
+        }
+        return $basePath;
+    }
+
+    //
     function getThemePath ($themeObj = false) {
         if (!$themeObj) $themeObj = $this->themeObj;
         $attr = $this->attributes($themeObj);
@@ -509,6 +521,9 @@ class SiteXML {
                     }
                     $liClass = ($attr['id'] == $this->pid) ? ' class="siteXML-current"' : '';
                     $href = (isset($attr['alias'])) ? '/' . $attr['alias'] : '/?id=' . $attr['id'];
+                    if ($this->basePath) {
+                        $href = '/' . $this->basePath . $href;
+                    }
                     $HTML .= '<li' . $liClass . '><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
                     $HTML .= $this->getNavi($v, $maxlevel, $level);
                     $HTML .= '</li>';
