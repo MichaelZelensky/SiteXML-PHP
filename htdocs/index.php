@@ -402,7 +402,12 @@ class SiteXML {
         } else {
             $dir = '';
         }
-        return '/' . THEMES_DIR . $dir;
+        if ($this->basePath) {
+            $fullPath = '/'. $this->basePath .'/'. THEMES_DIR . $dir;
+        } else {
+            $fullPath = '/'. THEMES_DIR . $dir;
+        }
+        return $fullPath;
     }
 
     //
@@ -596,7 +601,7 @@ class SiteXML {
     //
     function appendScripts($HTML) {
         $pos = stripos($HTML, "</body>");
-        $scripts = '<script src="/js/jquery-2.1.3.min.js"></script>' .
+        $scripts = '<script src="'. ($this->basePath ? $this->basePath . '/' : '') .'/js/jquery-2.1.3.min.js"></script>' .
             AJAX_BROWSING_SCRIPT .
             ($this->editMode ? CONTENT_EDIT_SCRIPT : '');
         if ($pos >= 0) {
