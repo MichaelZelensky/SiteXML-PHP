@@ -529,7 +529,20 @@ class SiteXML {
                     if ($this->basePath) {
                         $href = '/' . $this->basePath . $href;
                     }
-                    $HTML .= '<li' . $liClass . '><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
+
+                    $hasContent = false;
+                    foreach($v as $i => $tmp) {
+                        if (strtolower($i) == 'content') {
+                            $hasContent = true;
+                            break;
+                        }
+                    }
+
+                    if ($hasContent) {
+                        $HTML .= '<li' . $liClass . '><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
+                    } else {
+                        $HTML .= '<li' . $liClass . '>' . $attr['name'] . '';
+                    }
                     $HTML .= $this->getNavi($v, $maxlevel, $level);
                     $HTML .= '</li>';
                 }
