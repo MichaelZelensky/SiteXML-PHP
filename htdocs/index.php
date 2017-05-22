@@ -539,9 +539,9 @@ class SiteXML {
                     }
 
                     if ($hasContent) {
-                        $HTML .= '<li' . $liClass . '><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
+                        $HTML .= '<li' . $liClass . ' pid="' . $attr['id'] . '"><a href="' . $href . '" pid="' . $attr['id'] . '">' . $attr['name'] . '</a>';
                     } else {
-                        $HTML .= '<li' . $liClass . '>' . $attr['name'] . '';
+                        $HTML .= '<li' . $liClass . 'pid="' . $attr['id'] . '">' . $attr['name'] . '';
                     }
                     $HTML .= $this->getNavi($v, $maxlevel, $level);
                     $HTML .= '</li>';
