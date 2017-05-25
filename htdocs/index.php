@@ -1,6 +1,8 @@
 <?php
 
-/*TODO: edit PLINK converts <%PLINK(x)%> to <a href="x">y</a>, so PLINK is lost */
+/*
+ * TODO: when editing, and update content is sent back to the server, PLINK converts <%PLINK(x)%> to <a href="x">y</a>, so PLINK is lost
+*/
 
 /**
  * SiteXML parser
@@ -710,6 +712,7 @@ class SiteXML {
         $file = CONTENT_DIR . $file[0];
         if (file_exists($file)) {
             $content = file_get_contents($file);
+            $content = $this->replacePLINK($content);
         } else {
             $content = false;
         }
