@@ -112,7 +112,7 @@
                     if (!history.pushState) {
                         //use link
                         return true;
-                    } else if (theme_next.attributes.dir === theme_cur.attributes.dir && theme_next.attributes.file === theme_cur.attributes.file) {
+                    } else if (theme_cur === theme_next) {
                         page = me.SiteXML.getPageById(pid);
                         me.displayPage(page);
                         //getting History API and displaying the right URL
