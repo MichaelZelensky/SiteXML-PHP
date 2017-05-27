@@ -616,7 +616,7 @@ class SiteXML {
     //
     function appendScripts($HTML) {
         $pos = stripos($HTML, "</body>");
-        $scripts = '<script src="'. ($this->basePath ? $this->basePath . '/' : '') .'/js/jquery-2.1.3.min.js"></script>' .
+        $scripts = '<!--<script src="'. ($this->basePath ? $this->basePath . '/' : '') .'/js/jquery-2.1.3.min.js"></script>-->' .
             '<script src="'. ($this->basePath ? $this->basePath . '/' : '') .'/js/sitexml.js"></script>' .
             AJAX_BROWSING_SCRIPT .
             ($this->editMode ? CONTENT_EDIT_SCRIPT : '');

@@ -19,11 +19,6 @@
         this.SiteXML.loadSitexml();
         this.current_pid = this.getCurrentPid();
         this.start();
-
-        /*siteXML.loadXML('/?sitexml');
-         window.addEventListener('siteXML.xml.loaded', function () {
-         siteXML.start();
-         });*/
     };
 
     /*
@@ -48,6 +43,46 @@
         //if (siteXML.xml === undefined) return;
         var me = this,
             as = document.getElementsByTagName('a');
+        this.addClickListeners(as);
+        window.addEventListener("popstate", function(e) {
+            if (e.state) {
+                me.displayPage(e.state);
+                document.title = me.getTitle(e.state);
+            }
+        });
+        window.addEventListener("content.is.loaded", function(e) {
+            var c, name, cz, cid = e.data.cid;
+            if (cid && me.SiteXML.content && me.SiteXML.content[cid]) {
+                c = me.SiteXML.getContentById(e.data.cid);
+                if (c) {
+                    name = c.attributes.name;
+                    cz = me.getContentZoneByName(name);
+                    if (cz) {
+                        cz.innerHTML = me.SiteXML.content[cid];
+                        me.SiteXML.triggerEvent(window, 'sitexml.content.displayed', {
+                            cz: cz,
+                            contentObj: me.SiteXML.content[cid],
+                            cid: cid
+                        });
+                    }
+                }
+            }
+        });
+        window.addEventListener("sitexml.content.displayed", function(e){
+            var as;
+            if (e.data && e.data.cz && e.data.cz.tagName) {
+                as = e.data.cz.getElementsByTagName('a');
+                me.addClickListeners(as);
+            }
+        });
+    };
+
+    /*
+     * Adds onclick listeners to given A elements, that have attribute PID
+     * @Param {Array} as - list of A elements
+     */
+    siteXML.addClickListeners = function (as) {
+        var me = this;
         for (var i = 0, n = as.length; i < n; i++) {
             if (as[i].attributes['pid']) {
                 as[i].onclick = function() {
@@ -91,25 +126,6 @@
                 }
             }
         }
-
-        window.addEventListener("popstate", function(e) {
-            me.displayPage(e.state);
-            document.title = me.getTitle(e.state);
-        });
-
-        window.addEventListener("content.is.loaded", function(e){
-            var c, name, cz, cid = e.data.cid;
-            if (cid && me.SiteXML.content && me.SiteXML.content[cid]) {
-                c = me.SiteXML.getContentById(e.data.cid);
-                if (c) {
-                    name = c.attributes.name;
-                    cz = me.getContentZoneByName(name);
-                    if (cz) {
-                        cz.innerHTML = me.SiteXML.content[cid];
-                    }
-                }
-            }
-        });
     };
 
     /*
@@ -143,6 +159,11 @@
                 if (cid) {
                     if (this.SiteXML.content && this.SiteXML.content[cid]) {
                         czs[name].innerHTML = this.SiteXML.content[cid];
+                        this.SiteXML.triggerEvent(window, 'sitexml.content.displayed', {
+                            cz: czs[name],
+                            content: this.SiteXML.content[cid],
+                            cid: cid
+                        });
                     } else {
                         czs[name].innerHTML = 'loading...';
                         this.SiteXML.loadContent(cid);
@@ -231,45 +252,7 @@
         return names;
     };
 
-    //
-    /*siteXML.loadXML = function(path) {
-     var xhr,
-     me = this;
-     if (window.XMLHttpRequest) { // Mozilla, Safari, IE7+ ...
-     xhr = new XMLHttpRequest();
-     } else if (window.ActiveXObject) { // IE 6 and older
-     xhr = new ActiveXObject("Microsoft.XMLHTTP");
-     }
-     xhr.open('GET', path);
-     xhr.send();
-     xhr.onload = function () {
-     me.xmlIsLoaded = true;
-     me.xml = this.responseXML;
-     triggerEvent('siteXML.xml.loaded');
-     }
-     };*/
-
-    /*function triggerEvent (name, element) {
-     var element = element || window;
-     event; // The custom event that will be created
-
-     if (document.createEvent) {
-     event = document.createEvent("HTMLEvents");
-     event.initEvent(name, true, true);
-     } else {
-     event = document.createEventObject();
-     event.eventType = name;
-     }
-
-     event.eventName = name;
-
-     if (document.createEvent) {
-     element.dispatchEvent(event);
-     } else {
-     element.fireEvent("on" + event.eventType, event);
-     }
-     }*/
-
+    /**/
     siteXML.init();
 
 })();
