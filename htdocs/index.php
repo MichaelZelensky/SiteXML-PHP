@@ -1,8 +1,6 @@
 <?php
 
-/*
- * TODO: when editing, and update content is sent back to the server, PLINK converts <%PLINK(x)%> to <a href="x">y</a>, so PLINK is lost
-*/
+/*TODO: edit PLINK converts <%PLINK(x)%> to <a href="x">y</a>, so PLINK is lost */
 
 /**
  * SiteXML parser
@@ -84,8 +82,6 @@ switch($method) {
         } else {
             echo $siteXML->page();
         }
-
-        echo '<!--' . print_r($_SESSION, true) . '-->';
 
         break;
 
@@ -502,10 +498,10 @@ class SiteXML {
                         $file = CONTENT_DIR . $v;
                         if (file_exists($file)) {
                             $contents = file_get_contents($file);
-                            $contents = '<div class="siteXML-content" cid="' . $attr['id'] . '" cname="' . $name . '">' . $contents . '</div>';
                         } else {
-                            $this->error("Error: content file " . $attr['file'] . " does not exist");
+                            $contents = $this->error("Error: content file " . $attr['file'] . " does not exist", true);
                         }
+                        $contents = '<div class="siteXML-content" cid="' . $attr['id'] . '" cname="' . $name . '">' . $contents . '</div>';
                     }
                     $HTML = str_replace($search, $contents, $HTML);
                 }
@@ -643,11 +639,17 @@ class SiteXML {
     }
 
     /*
+     * Echoes or returns error message
      * @param {String} $error
+     * @param {Boolean} $return - return error message instead of just echoing it
      * */
-    function error ($error) {
+    function error ($error, $return = false) {
         if (DEBUG) {
-            echo "$error\n";
+            if ($return) {
+                return "$error\n";
+            } else {
+                echo "$error\n";
+            }
         }
     }
 
@@ -716,6 +718,7 @@ class SiteXML {
             $content = $this->replacePLINK($content);
         } else {
             $content = false;
+            http_response_code(404);
         }
         return $content;
     }
