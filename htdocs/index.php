@@ -499,7 +499,7 @@ class SiteXML {
                         if (file_exists($file)) {
                             $contents = file_get_contents($file);
                         } else {
-                            $contents = $this->error("Error: content file " . $attr['file'] . " does not exist", true);
+                            $contents = $this->error("Error: content file " . $v . " does not exist", true);
                         }
                         $contents = '<div class="siteXML-content" cid="' . $attr['id'] . '" cname="' . $name . '">' . $contents . '</div>';
                     }
