@@ -8,7 +8,7 @@ Copy files to your sever. Enjoy.
 
 NOTES:
 
-- In order to make paths work set <code>AllowOverride All</code> in Apache config site
+- In order to make paths work set AllowOverride All in Apache config site
 - The minimum requirement is the presence of .site.xml file in the site root.
 
 More info on SiteXML at: www.sitexml.info
