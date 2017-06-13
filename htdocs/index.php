@@ -240,7 +240,7 @@ class SiteXML {
         foreach ($pageObj as $k => $v) {
             if (strtolower($k) == 'page') {
                 $attr = $this->attributes($v);
-                if (strtolower($attr['startpage']) == 'yes') {
+                if (@strtolower($attr['startpage']) == 'yes') {
                     $defaultPid = $attr['id'];
                     break;
                 } else {
