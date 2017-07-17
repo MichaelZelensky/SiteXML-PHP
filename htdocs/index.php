@@ -46,12 +46,20 @@ switch($method) {
 
     case 'POST':
         if (isset($_POST['sitexml'])) {
+            if (!isset($_SESSION['username'])) {
+                echo "No access";
+                die;
+            }
             if ($siteXML->saveXML($_POST['sitexml'])) {
                 echo 'siteXML saved';
             } else {
                 $siteXML->error('siteXML was not saved');
             }
         } elseif (isset($_POST['cid']) && isset($_POST['content'])) {
+            if (!isset($_SESSION['username'])) {
+                echo "No access";
+                die;
+            }
             $siteXML->saveContent($_POST['cid'], $_POST['content']);
         } elseif (isset($_POST['username']) && isset($_POST['password'])) {
             $siteXML->login();
