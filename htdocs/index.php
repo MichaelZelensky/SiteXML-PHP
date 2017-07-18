@@ -489,7 +489,7 @@ class SiteXML {
         if ($obj) foreach ($obj as $k => $v) {
             if (strtolower($k) == 'content') {
                 $attr = $this->attributes($v);
-                $name = $attr['name'];
+                $name = @$attr['name'];
                 $search = "<%CONTENT($name)%>";
                 if (strpos($HTML, $search) !== false) {
                     if (isset($attr['type']) && $attr['type'] == 'module') {
