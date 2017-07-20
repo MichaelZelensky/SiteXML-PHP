@@ -88,7 +88,11 @@ switch($method) {
         } elseif (!empty($_GET['id']) && !empty($_GET['name'])) {
             echo $siteXML->getContentByIdAndName($_GET['id'], $_GET['name']);
         } else {
-            echo $siteXML->page();
+            if ($siteXML->pid) {
+                echo $siteXML->page();
+            } else {
+                echo "It works, but there are no pages";
+            }
         }
 
         break;
@@ -114,9 +118,15 @@ class SiteXML {
         $this->setEditMode();
         $this->obj = $this->getObj();
         $this->pid = $this->getPid();
-        $this->pageObj = $this->getPageObj($this->pid);
-        $this->themeObj = $this->getTheme();
-        $this->basePath = $this->getSiteBasePath();
+        if ($this->pid) {
+            $this->pageObj = $this->getPageObj($this->pid);
+            $this->themeObj = $this->getTheme();
+            $this->basePath = $this->getSiteBasePath();
+        } else {
+            $this->pageObj = null;
+            $this->themeObj = null;
+            $this->basePath = null;
+        }
     }
 
     //
@@ -235,7 +245,7 @@ class SiteXML {
             $pid = $defaultPid;
         }
         if (!$pid) {
-            die('Fatal error: no pages in this site');
+            return null;
         } else {
             return $pid;
         }
