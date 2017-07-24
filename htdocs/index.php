@@ -47,8 +47,8 @@ switch($method) {
     case 'POST':
         if (isset($_POST['sitexml'])) {
             if (!isset($_SESSION['username'])) {
-                echo "No access";
-                die;
+                header("HTTP/1.1 401 Unauthorized");
+                die("No access");
             }
             if ($siteXML->saveXML($_POST['sitexml'])) {
                 echo 'siteXML saved';
@@ -57,8 +57,8 @@ switch($method) {
             }
         } elseif (isset($_POST['cid']) && isset($_POST['content'])) {
             if (!isset($_SESSION['username'])) {
-                echo "No access";
-                die;
+                header("HTTP/1.1 401 Unauthorized");
+                die("No access");
             }
             $siteXML->saveContent($_POST['cid'], $_POST['content']);
         } elseif (isset($_POST['username']) && isset($_POST['password'])) {
