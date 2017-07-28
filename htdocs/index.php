@@ -506,6 +506,9 @@ class SiteXML {
                         $file = MODULES_DIR . $v;
                         if (file_exists($file)) {
                             ob_start();
+                            if (!empty($attr['params'])) {
+                                $MODULE_PARAMS = $attr['params'];
+                            }
                             include_once($file);
                             $contents = ob_get_clean();
                         } else {
