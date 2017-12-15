@@ -14,6 +14,8 @@
  */
 
 DEFINE('DEBUG', true);
+DEFINE('LOG', true);
+DEFINE('LOGFILE', '../sitexml.log');
 DEFINE('siteXML', '.site.xml');
 DEFINE('USERS_FILE', '../.users');
 DEFINE('CONTENT_DIR', '.content/');
@@ -47,21 +49,27 @@ switch($method) {
     case 'POST':
         if (isset($_POST['sitexml'])) {
             if (!isset($_SESSION['username'])) {
+                $siteXML->log("POST sitexml (401)");
                 header("HTTP/1.1 401 Unauthorized");
                 die("No access");
             }
             if ($siteXML->saveXML($_POST['sitexml'])) {
+                $siteXML->log("POST sitexml (200)");
                 echo 'siteXML saved';
             } else {
+                $siteXML->log("POST sitexml (not saved)");
                 $siteXML->error('siteXML was not saved');
             }
         } elseif (isset($_POST['cid']) && isset($_POST['content'])) {
             if (!isset($_SESSION['username'])) {
+                $siteXML->log("POST cid,content ". $_POST['cid'] ."(401)");
                 header("HTTP/1.1 401 Unauthorized");
                 die("No access");
             }
+            $siteXML->log("POST cid,content ". $_POST['cid'] ."(200)");
             $siteXML->saveContent($_POST['cid'], $_POST['content']);
         } elseif (isset($_POST['username']) && isset($_POST['password'])) {
+            $siteXML->log("POST username, password ". $_POST['username']);
             $siteXML->login();
         }
         break;
@@ -69,6 +77,7 @@ switch($method) {
     case 'GET':
         if (isset($_GET['logout'])) {
             $siteXML->logout();
+            $siteXML->log("GET logout");
         }
 
         if (isset($_GET['edit'])) {
@@ -78,17 +87,23 @@ switch($method) {
             } else {
                 echo $siteXML->loginScreen('edit');
             }
+            $siteXML->log("GET edit");
         } elseif (isset($_GET['sitexml'])) {
             header("Content-type: text/xml; charset=utf-8");
+            $siteXML->log("GET sitexml");
             echo $siteXML->getXML();
         } elseif (isset($_GET['login'])) {
+            $siteXML->log("GET login");
             echo $siteXML->loginScreen();
         } elseif (!empty($_GET['cid'])) {
+            $siteXML->log("GET cid " . $_GET['cid']);
             echo $siteXML->getContent($_GET['cid']);
         } elseif (!empty($_GET['id']) && !empty($_GET['name'])) {
+            $siteXML->log("GET id,name " . $_GET['id']) . ', ' .$_GET['name'];
             echo $siteXML->getContentByIdAndName($_GET['id'], $_GET['name']);
         } else {
             if ($siteXML->pid) {
+                $siteXML->log("GET page id ". $siteXML->pid);
                 echo $siteXML->page();
             } else {
                 echo "It works, but there are no pages";
@@ -742,5 +757,12 @@ class SiteXML {
             http_response_code(404);
         }
         return $content;
+    }
+
+    function log($str) {
+        if (LOG) {
+            $str = date('Y-m-d H:i:s') ." ". $_SERVER['REMOTE_ADDR'] ." ". $str ."\n";
+            file_put_contents(LOGFILE, $str, FILE_APPEND);
+        }
     }
 }
