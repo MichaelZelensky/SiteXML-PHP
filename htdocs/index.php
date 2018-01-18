@@ -1,15 +1,10 @@
 <?php
 
-/*TODO: edit PLINK converts <%PLINK(x)%> to <a href="x">y</a>, so PLINK is lost */
-
 /**
  * SiteXML parser
- *
  * v 2.0
- *
  * (c) 2015 Michael Zelensky
- *
- * About SiteXML technology: www.sitexml.info
+ * License: MIT
  *
  */
 
